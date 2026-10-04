@@ -22,6 +22,11 @@ npx tsc --noEmit  # type-check without building
 
 There is no test runner configured yet.
 
+## Skills
+
+Use always /frontend-design to design the user interface
+
+
 ## Stack and conventions
 
 - **Next.js 16.3 (App Router) + React 19.2.** APIs differ from older Next.js; check `node_modules/next/dist/docs/` (`01-app/`, `03-architecture/`) before using a Next.js API. Example: the root layout types its props with the global `LayoutProps<"/">` helper instead of hand-written prop types.
