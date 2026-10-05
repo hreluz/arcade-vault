@@ -7,7 +7,10 @@ const TOP_CLASS = [" top1", " top2", " top3"];
 
 export default function HallOfFameBoard() {
   const [tab, setTab] = useState(GAMES[0].id);
-  const rows = useMemo(() => seededScores(tab.length * 23 + 7, 12), [tab]);
+  const rows = useMemo(
+    () => seededScores((GAMES.findIndex((g) => g.id === tab) + 1) * 23 + 7, 12),
+    [tab],
+  );
   const [first, second, third] = rows;
 
   return (

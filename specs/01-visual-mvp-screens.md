@@ -72,7 +72,7 @@ Conventions:
 - The library search matches the title or the `short` description.
 - `seededScores` must stay deterministic so server and client render the same rows and hydration does not mismatch.
 - Numbers are formatted with `toLocaleString("en-US")` everywhere, with an explicit locale to avoid hydration mismatches.
-- Seeds stay as in the templates: detail uses `id.length * 17 + 3` (10 rows) and the Hall of Fame uses `id.length * 23 + 7` (12 rows).
+- Seeds use the game's 1-based position in `GAMES` (`n`), so every game gets a distinct board: detail uses `n * 17 + 3` (10 rows) and the Hall of Fame uses `n * 23 + 7` (12 rows). The template's `id.length` seeds gave equal-length ids identical boards.
 
 No persistent data is introduced. There is no `localStorage`, cookies or server storage.
 
