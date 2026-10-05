@@ -12,6 +12,8 @@ Development follows a spec-driven workflow using the `/spec` and `/spec-impl` sk
 
 ## Commands
 
+Always use Node 24.18.1 via nvm (pinned in `.nvmrc`). Shell state does not persist between commands, so prefix every Node/npm/npx command with it, e.g. `source ~/.nvm/nvm.sh && nvm use && npm run dev`.
+
 ```bash
 npm run dev     # dev server at http://localhost:3000 (also regenerates AGENTS.md)
 npm run build   # production build (includes type checking)
