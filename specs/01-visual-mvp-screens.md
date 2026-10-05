@@ -46,8 +46,8 @@ export type Category = "ARCADE" | "PUZZLE" | "SHOOTER" | "VERSUS";
 export type GameColor = "cyan" | "magenta" | "yellow" | "green";
 
 export type Game = {
-  id: string;          // URL slug, e.g. "bloque-buster"
-  title: string;       // e.g. "BLOQUE BUSTER"
+  id: string;          // URL slug, e.g. "block-buster"
+  title: string;       // e.g. "BLOCK BUSTER"
   short: string;       // one-line card description (English)
   long: string;        // detail page paragraph (English)
   cat: Category;
@@ -59,7 +59,7 @@ export type Game = {
 
 export type ScoreRow = { rank: number; name: string; score: number; date: string }; // date "DD/MM/2026"
 
-export const GAMES: Game[];                                   // the 8 games from data.jsx, same ids/covers/colors/numbers
+export const GAMES: Game[];                                   // the 8 games from data.jsx, English titles/ids, same covers/colors/numbers
 export const CATEGORIES: readonly ["ALL", ...Category[]];     // "TODOS" → "ALL"
 export function getGame(id: string): Game | undefined;
 export function seededScores(seed: number, count?: number): ScoreRow[]; // same LCG algorithm as data.jsx
@@ -67,8 +67,9 @@ export function seededScores(seed: number, count?: number): ScoreRow[]; // same 
 
 Conventions:
 
-- Game ids, cover classes, colors, `best` and `plays` values are copied unchanged from `references/templates/data.jsx`.
-- Game titles stay as in the template (proper names). `short` and `long` are translated to English.
+- Cover classes, colors, `best` and `plays` values are copied unchanged from `references/templates/data.jsx`.
+- Game titles, `short` and `long` are translated to English. Ids are kebab-case slugs of the English titles (see the title table below).
+- The library search matches the title or the `short` description.
 - `seededScores` must stay deterministic so server and client render the same rows and hydration does not mismatch.
 - Numbers are formatted with `toLocaleString("en-US")` everywhere, with an explicit locale to avoid hydration mismatches.
 - Seeds stay as in the templates: detail uses `id.length * 17 + 3` (10 rows) and the Hall of Fame uses `id.length * 23 + 7` (12 rows).
@@ -130,6 +131,19 @@ No persistent data is introduced. There is no `localStorage`, cookies or server 
 | VOLVER A LA BIBLIOTECA | BACK TO LIBRARY |
 | © 2026 ARCADE VAULT · HECHO CON PIXELES Y NEÓN · v2.6.0 | © 2026 ARCADE VAULT · MADE WITH PIXELS AND NEON · v2.6.0 |
 
+### Game titles and ids
+
+| Template title (id) | MVP title (id) |
+| --- | --- |
+| BLOQUE BUSTER (`bloque-buster`) | BLOCK BUSTER (`block-buster`) |
+| CAÍDA (`caida`) | FALLDOWN (`falldown`) |
+| SERPENTINA (`serpentina`) | SERPENTINE (`serpentine`) |
+| GLOTÓN (`gloton`) | GLUTTON (`glutton`) |
+| INVASORES (`invasores`) | INVADERS (`invaders`) |
+| ROCAS (`rocas`) | ROCKS (`rocks`) |
+| RANARIA (`ranaria`) | FROGGERIA (`froggeria`) |
+| DUELO PIXEL (`duelo-pixel`) | PIXEL DUEL (`pixel-duel`) |
+
 ## Implementation plan
 
 Before each step that touches a Next.js API (`params`, `generateStaticParams`, `notFound`, `usePathname`, `PageProps`), check `node_modules/next/dist/docs/`. Follow the project rule of using the `/frontend-design` skill for UI work.
@@ -150,7 +164,7 @@ Before each step that touches a Next.js API (`params`, `generateStaticParams`, `
 - [ ] `npm run lint` reports no errors.
 - [ ] `/`, `/games/[id]` (all 8 ids), `/games/[id]/play` (all 8 ids), `/login` and `/hall-of-fame` render with no console errors and no hydration warnings.
 - [ ] `/games/does-not-exist` and `/games/does-not-exist/play` render the themed 404 page.
-- [ ] The library shows 8 cards. Typing "rock" leaves only ROCAS. Selecting "PUZZLE" leaves only CAÍDA. A query of "zzz" shows "NO RESULTS".
+- [ ] The library shows 8 cards. Typing "rock" leaves only ROCKS. Selecting "PUZZLE" leaves only FALLDOWN. A query of "zzz" shows "NO RESULTS".
 - [ ] Clicking a card or its PLAY button navigates to `/games/<id>`.
 - [ ] "▶ PLAY NOW" navigates to `/games/<id>/play`. "BACK TO VAULT" navigates to `/`.
 - [ ] On the player the score increases while not paused and stops while paused.
@@ -161,13 +175,14 @@ Before each step that touches a Next.js API (`params`, `generateStaticParams`, `
 - [ ] The Hall of Fame shows a podium (02 / 01 CHAMPION / 03) and a 12-row table. Clicking another game tab changes both.
 - [ ] The nav's "Library" link is active on `/`, `/games/<id>` and `/games/<id>/play`. "Hall of Fame" is active on `/hall-of-fame`.
 - [ ] At 375px viewport width the nav links are hidden, the hamburger opens the drawer and no page scrolls horizontally.
-- [ ] No visible UI text remains in Spanish, except game titles.
+- [ ] No visible UI text remains in Spanish, including game titles.
 - [ ] Every screen visually matches its counterpart in `references/templates/Arcade Vault.html` (same classes, colors, fonts and animations).
 
 ## Decisions
 
 - **Yes:** English copy, `<html lang="en">`. Matches the existing layout metadata. The key-string table above is the translation reference.
-- **Yes:** Game titles kept as in the template (BLOQUE BUSTER, CAÍDA, etc.). They are proper names, not UI copy.
+- **Yes:** Game titles and ids translated to English (BLOCK BUSTER, FALLDOWN, etc.; see the title table). URLs match the visible titles.
+- **No:** Keeping the Spanish titles and ids from the template.
 - **No:** Spanish UI as in the templates. The user chose English.
 - **Yes:** Real App Router routes (`/games/[id]`, `/games/[id]/play`, `/login`, `/hall-of-fame`). They give deep links, a working back button and static generation.
 - **No:** Hash-based single-page routing as in `app.jsx`. It doesn't fit Next.js and has no real URLs.

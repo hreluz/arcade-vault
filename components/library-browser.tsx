@@ -10,13 +10,15 @@ export default function LibraryBrowser() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<CategoryFilter>("ALL");
 
-  const filtered = useMemo(
-    () =>
-      GAMES.filter(
-        (g) => (cat === "ALL" || g.cat === cat) && g.title.toLowerCase().includes(q.toLowerCase()),
-      ),
-    [q, cat],
-  );
+  // Search matches the title or the short description (e.g. "neon" finds BLOCK BUSTER).
+  const filtered = useMemo(() => {
+    const query = q.toLowerCase();
+    return GAMES.filter(
+      (g) =>
+        (cat === "ALL" || g.cat === cat) &&
+        (g.title.toLowerCase().includes(query) || g.short.toLowerCase().includes(query)),
+    );
+  }, [q, cat]);
 
   return (
     <>
