@@ -21,7 +21,7 @@ SPEC 02 ported the landing page and deliberately left `about.jsx` for its own sp
 - A Server Action that re-validates the input, applies a honeypot and an in-memory per-IP rate limit, and sends one notification email to the team inbox through the Resend SDK.
 - Nav: "About" added as the last link on desktop and in the mobile drawer, active on `/about`.
 - The About styles from `references/templates/home-about/styles.css` are ported into `app/globals.css`.
-- `resend` added as a dependency, and a committed `.env.example` documenting the env vars.
+- `resend` added as a dependency, and a committed `.env.template` documenting the env vars.
 - All copy translated to English (see the copy table).
 
 **Out of scope (for future specs):**
@@ -84,7 +84,7 @@ Form field names: `name`, `email`, `message`, and the honeypot `company`.
 | `CONTACT_TO_EMAIL` | yes | — | Team inbox that receives the messages |
 | `CONTACT_FROM_EMAIL` | no | `Arcade Vault <onboarding@resend.dev>` | Sender. `onboarding@resend.dev` only delivers to the Resend account owner's address |
 
-`.env.example` lists the three with empty/placeholder values. Real values go in `.env.local` (already git-ignored by `.env*`).
+`.env.template` lists the three with empty/placeholder values. Real values go in `.env.local` (already git-ignored by `.env*`).
 
 ## Server Action behavior
 
@@ -131,7 +131,7 @@ Form field names: `name`, `email`, `message`, and the honeypot `company`.
 | `lib/rate-limit.ts` | new | In-memory sliding-window limiter |
 | `components/nav.tsx` | modified | `about` section, "About" link last on desktop and drawer |
 | `app/globals.css` | modified | ABOUT PAGE block, `.contact-error`, `.hp-field`, reduced-motion additions |
-| `.env.example` | new | Documents the three env vars |
+| `.env.template` | new | Documents the three env vars |
 | `package.json` / `package-lock.json` | modified | `resend` dependency |
 
 ## English copy
@@ -172,7 +172,7 @@ Before each step that touches a Next.js API (Server Actions, `useActionState`, `
 3. Create `components/highlight-icon.tsx` and `app/about/page.tsx` with the hero, highlights, divider (`<Reveal as="div" className="about-divider">`) and the contact intro, plus a static placeholder where the form goes. Add `metadata` in the style of the other pages. Verify: `/about` matches the reference above the form.
 4. Update `components/nav.tsx`: `about` section for `/about`, "About" as the last link on desktop and in the drawer. Verify: "About" is active only on `/about`.
 5. Create `lib/contact.ts` and `lib/rate-limit.ts`. Verify: `npx tsc --noEmit` passes.
-6. `npm install resend`. Create `.env.example`. Create `app/about/actions.ts` following the Server Action behavior section. Verify: `npx tsc --noEmit` passes.
+6. `npm install resend`. Create `.env.template`. Create `app/about/actions.ts` following the Server Action behavior section. Verify: `npx tsc --noEmit` passes.
 7. Create `components/contact-form.tsx` following the Form behavior section and mount it in `app/about/page.tsx`. Verify manually against the acceptance criteria below.
 8. Run `npm run lint` and `npm run build` and fix any issues.
 
@@ -180,7 +180,7 @@ Before each step that touches a Next.js API (Server Actions, `useActionState`, `
 
 - [ ] `npm run build` completes with no type or lint errors.
 - [ ] `npm run lint` reports no errors.
-- [ ] `resend` is in `dependencies` and `.env.example` lists `RESEND_API_KEY`, `CONTACT_TO_EMAIL` and `CONTACT_FROM_EMAIL`.
+- [ ] `resend` is in `dependencies` and `.env.template` lists `RESEND_API_KEY`, `CONTACT_TO_EMAIL` and `CONTACT_FROM_EMAIL`.
 - [ ] `/about` renders hero, divider and contact sections in order, with no console errors and no hydration warnings.
 - [ ] The divider and contact sections start hidden and fade in when scrolled into view.
 - [ ] The nav shows Home · Library · Hall of Fame · About on desktop and in the drawer. "About" is active only on `/about`.
@@ -225,7 +225,7 @@ Before each step that touches a Next.js API (Server Actions, `useActionState`, `
 | --- | --- |
 | In-memory rate limit resets on restart and is per instance in serverless deploys | Accepted for now. The honeypot covers simple bots. A persistent limiter is its own spec. |
 | `x-forwarded-for` can be spoofed when not behind a trusted proxy | Accepted. Only the first entry is used; worst case a spammer evades the limit, not the honeypot or validation. |
-| `onboarding@resend.dev` only delivers to the Resend account owner's address | `CONTACT_TO_EMAIL` must be that address until a domain is verified. Documented in `.env.example`. |
+| `onboarding@resend.dev` only delivers to the Resend account owner's address | `CONTACT_TO_EMAIL` must be that address until a domain is verified. Documented in `.env.template`. |
 | The API key leaks to the client | Only read inside `app/about/actions.ts`, never with a `NEXT_PUBLIC_` prefix. Checked by the bundle grep criterion. |
 | Duplicate `.field` rules or `@keyframes` when porting CSS | Step 1 lists the rules to skip. Check the login form visually before/after. |
 | The template's `.contact-form textarea` styles depend on `.field input` styles already in `globals.css` | Port the textarea rules as-is and compare side by side with the reference. |
