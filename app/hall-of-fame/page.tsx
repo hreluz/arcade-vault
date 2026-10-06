@@ -17,7 +17,7 @@ export default function HallOfFamePage() {
       <HallOfFameBoard />
 
       <div className="mt-8 text-center">
-        <Link href="/" className="btn lg">
+        <Link href="/games" className="btn lg">
           BACK TO LIBRARY
         </Link>
       </div>

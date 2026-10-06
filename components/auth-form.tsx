@@ -17,7 +17,7 @@ export default function AuthForm() {
   // Visual only: no account is created or stored.
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    router.push("/");
+    router.push("/games");
   };
 
   return (
@@ -71,7 +71,7 @@ export default function AuthForm() {
           </button>
         </form>
 
-        <Link href="/" className="btn ghost mt-2.5 w-full">
+        <Link href="/games" className="btn ghost mt-2.5 w-full">
           PLAY AS GUEST
         </Link>
 
