@@ -292,6 +292,7 @@
     font-family: var(--pixel);
     font-size: clamp(28px, 6vw, 64px);
     letter-spacing: 0.06em;
+    font-weight: 700; /* reference relies on the UA h1 default; preflight resets it */
     margin: 0;
     background: linear-gradient(180deg, #fff 0%, var(--cyan) 60%, var(--magenta) 110%);
     -webkit-background-clip: text;
@@ -329,7 +330,7 @@
   }
   .av-search:focus-within { border-color: var(--cyan); box-shadow: 0 0 12px rgba(0,245,255,0.35); }
   .av-search input {
-    flex: 1; background: transparent; border: 0; outline: 0;
+    flex: 1; background: transparent; border: 0; outline: 0; padding: 1px 2px;
     color: var(--ink); font-size: 13px; letter-spacing: 0.04em;
   }
   .av-search input::placeholder { color: var(--ink-faint); }
