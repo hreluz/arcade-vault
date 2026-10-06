@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-type Section = "home" | "library" | "hall-of-fame" | "login";
+type Section = "home" | "library" | "hall-of-fame" | "about" | "login";
 
 function sectionOf(pathname: string): Section | null {
   if (pathname === "/") return "home";
   if (pathname === "/games" || pathname.startsWith("/games/")) return "library";
   if (pathname.startsWith("/hall-of-fame")) return "hall-of-fame";
+  if (pathname.startsWith("/about")) return "about";
   if (pathname.startsWith("/login")) return "login";
   return null;
 }
@@ -39,6 +40,9 @@ export default function Nav() {
           </Link>
           <Link href="/hall-of-fame" className={activeClass("hall-of-fame")}>
             Hall of Fame
+          </Link>
+          <Link href="/about" className={activeClass("about")}>
+            About
           </Link>
         </div>
         <div className="spacer" />
@@ -71,6 +75,9 @@ export default function Nav() {
         </Link>
         <Link href="/hall-of-fame" className={activeClass("hall-of-fame")} onClick={close}>
           Hall of Fame
+        </Link>
+        <Link href="/about" className={activeClass("about")} onClick={close}>
+          About
         </Link>
         <Link href="/login" className={activeClass("login")} onClick={close}>
           Sign In
