@@ -203,6 +203,7 @@ Before each step that touches a Next.js API (`Link`, `metadata`, `usePathname`),
 - **Yes:** Nav order Home · Library · Hall of Fame, logo → `/`.
 - **Yes:** Library-meaning links (`BACK TO LIBRARY`, `BACK TO VAULT`, login submit, `PLAY AS GUEST`) go to `/games`. After this spec `/` is a landing page, not the place to pick a game.
 - **Yes:** Respect `prefers-reduced-motion` for reveal and silhouettes.
+- **Yes:** The SCROLL hint is anchored to the bottom of `.home-hero`, not the inner block. The template's position overlaps the CTAs.
 - **No:** Template-exact motion with no reduced-motion handling.
 - **Yes:** A `<Reveal>` client wrapper that owns its `in` class through React state.
 - **No:** The template's `useReveal` hook, which queries `.reveal` globally and mutates `className` on elements React owns. It can be overwritten on re-render and needs the whole page to be a client component.
