@@ -2,9 +2,18 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-// A <section> that starts hidden (.reveal) and fades in (.in) the first time it enters the viewport.
-export default function Reveal({ className = "", children }: { className?: string; children: ReactNode }) {
-  const ref = useRef<HTMLElement>(null);
+// A <section> (or <div>) that starts hidden (.reveal) and fades in (.in) the first time it enters the viewport.
+export default function Reveal({
+  as: Tag = "section",
+  className = "",
+  children,
+}: {
+  as?: "section" | "div";
+  className?: string;
+  children: ReactNode;
+}) {
+  // HTMLDivElement satisfies both the <section> and <div> ref types.
+  const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -24,8 +33,8 @@ export default function Reveal({ className = "", children }: { className?: strin
   }, []);
 
   return (
-    <section ref={ref} className={"reveal " + className + (visible ? " in" : "")}>
+    <Tag ref={ref} className={"reveal " + className + (visible ? " in" : "")}>
       {children}
-    </section>
+    </Tag>
   );
 }
