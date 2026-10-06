@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ContactForm from "@/components/contact-form";
 import HighlightIcon, { type HighlightIconKind } from "@/components/highlight-icon";
 import Reveal from "@/components/reveal";
 
@@ -70,8 +71,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Placeholder until <ContactForm /> lands in step 7 */}
-          <div className="contact-form" />
+          <ContactForm />
         </div>
       </Reveal>
     </div>
