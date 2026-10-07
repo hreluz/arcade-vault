@@ -2,6 +2,8 @@
 // Classes are stateless definitions; every piece of mutable game state lives in
 // the createAsteroids closure.
 
+import type { EngineFactory, EnginePhase, EngineSnapshot } from "@/lib/engines/types";
+
 // ── Canvas ────────────────────────────────────────────────────────────────────
 const W = 800;
 const H = 600;
@@ -162,6 +164,7 @@ class PowerUp {
   vy: number;
   radius = 12;
   ttl = POWERUP_TTL;
+  age = 0; // drives the pulse, so a frozen frame stays still
   dead = false;
 
   constructor(x: number, y: number) {
@@ -177,13 +180,14 @@ class PowerUp {
     this.x = wrap(this.x + this.vx * dt, W);
     this.y = wrap(this.y + this.vy * dt, H);
     this.ttl -= dt;
+    this.age += dt;
     if (this.ttl <= 0) this.dead = true;
   }
 
   draw(ctx: CanvasRenderingContext2D) {
     // Blink during the last two seconds of its life
     if (this.ttl < 2 && Math.floor(this.ttl * 8) % 2 === 0) return;
-    const pulse = 0.85 + Math.sin(performance.now() / 150) * 0.15;
+    const pulse = 0.85 + Math.sin((this.age * 1000) / 150) * 0.15;
     ctx.save();
     ctx.shadowColor = MAGENTA;
     ctx.shadowBlur = GLOW;
@@ -349,3 +353,338 @@ class Particle {
     ctx.restore();
   }
 }
+
+// ── Engine ────────────────────────────────────────────────────────────────────
+const GAME_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"]);
+const SAFE_DIST = 130;
+
+function isEditable(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || target.matches("input, textarea, [contenteditable]"))
+  );
+}
+
+export const createAsteroids: EngineFactory = (canvas, cb) => {
+  const ctx = setupCanvas(canvas);
+
+  // Input
+  let keys: Keys = {};
+  let justPressed: Keys = {};
+
+  function pressed(code: string) {
+    const val = justPressed[code];
+    justPressed[code] = false;
+    return val;
+  }
+
+  function clearInput() {
+    keys = {};
+    justPressed = {};
+  }
+
+  // Game state
+  let phase: EnginePhase = "ready";
+  let ship = new Ship();
+  let bullets: Bullet[] = [];
+  let asteroids: Asteroid[] = [];
+  let particles: Particle[] = [];
+  let powerUps: PowerUp[] = [];
+  let score = 0;
+  let lives = START_LIVES;
+  let level = 1;
+  let deadTimer = 0;
+  let powerUpSpawned = false;
+  let killsSinceSpawn = 0;
+
+  // Loop and lifecycle
+  let lastTime: number | null = null;
+  let rafId = 0;
+  let destroyed = false;
+  let lastSnapshot: EngineSnapshot | null = null;
+
+  function spawnAsteroids(count: number) {
+    for (let i = 0; i < count; i++) {
+      let x: number, y: number;
+      do {
+        x = rand(0, W);
+        y = rand(0, H);
+      } while (Math.hypot(x - W / 2, y - H / 2) < SAFE_DIST);
+      asteroids.push(new Asteroid(x, y, 3));
+    }
+  }
+
+  function initRun() {
+    ship = new Ship();
+    bullets = [];
+    asteroids = [];
+    particles = [];
+    powerUps = [];
+    powerUpSpawned = false;
+    killsSinceSpawn = 0;
+    score = 0;
+    lives = START_LIVES;
+    level = 1;
+    deadTimer = 0;
+    spawnAsteroids(4);
+  }
+
+  function nextLevel() {
+    level++;
+    bullets = [];
+    particles = [];
+    powerUps = [];
+    powerUpSpawned = false;
+    killsSinceSpawn = 0;
+    ship.reset();
+    spawnAsteroids(3 + level);
+  }
+
+  function explode(x: number, y: number, count: number, color: string) {
+    for (let i = 0; i < count; i++) particles.push(new Particle(x, y, color));
+  }
+
+  function killShip() {
+    explode(ship.x, ship.y, 14, CYAN);
+    ship.dead = true;
+    lives--;
+    if (lives <= 0) {
+      phase = "over";
+      clearInput();
+    } else {
+      deadTimer = RESPAWN_WAIT;
+    }
+  }
+
+  // ── Snapshot ──
+  function snapshot(): EngineSnapshot {
+    return {
+      phase,
+      score,
+      lives,
+      level,
+      tripleShot: ship.tripleShot > 0 ? Math.round(ship.tripleShot * 10) / 10 : 0,
+    };
+  }
+
+  // Notifies React only when a field actually changed.
+  function emit() {
+    const next = snapshot();
+    const prev = lastSnapshot;
+    if (
+      prev &&
+      prev.phase === next.phase &&
+      prev.score === next.score &&
+      prev.lives === next.lives &&
+      prev.level === next.level &&
+      prev.tripleShot === next.tripleShot
+    ) {
+      return;
+    }
+    lastSnapshot = next;
+    cb.onChange(next);
+  }
+
+  // ── Update ──
+  function updateParticles(dt: number) {
+    particles.forEach((p) => p.update(dt));
+    particles = particles.filter((p) => !p.dead);
+  }
+
+  // Attract mode: asteroids drift, no ship.
+  function updateReady(dt: number) {
+    asteroids.forEach((a) => a.update(dt));
+    updateParticles(dt);
+  }
+
+  function updatePlaying(dt: number) {
+    // Waiting to respawn ("dead"): reported to React as "playing"
+    if (ship.dead) {
+      deadTimer -= dt;
+      updateParticles(dt);
+      asteroids.forEach((a) => a.update(dt));
+      if (deadTimer <= 0) ship.reset();
+      return;
+    }
+
+    if (pressed("Space")) bullets.push(...ship.tryShoot());
+
+    ship.update(dt, keys);
+    bullets.forEach((b) => b.update(dt));
+    asteroids.forEach((a) => a.update(dt));
+    updateParticles(dt);
+    powerUps.forEach((p) => p.update(dt));
+
+    bullets = bullets.filter((b) => !b.dead);
+    powerUps = powerUps.filter((p) => !p.dead);
+
+    for (const p of powerUps) {
+      if (!p.dead && dist(ship, p) < ship.radius + p.radius) {
+        p.dead = true;
+        ship.tripleShot = POWERUP_DURATION;
+      }
+    }
+
+    // Bullet vs asteroid
+    const newAsteroids: Asteroid[] = [];
+    for (const b of bullets) {
+      for (const a of asteroids) {
+        if (!a.dead && !b.dead && dist(b, a) < a.radius) {
+          b.dead = true;
+          a.dead = true;
+          score += POINTS[a.size];
+          explode(a.x, a.y, a.size * 5, YELLOW);
+          newAsteroids.push(...a.split());
+          if (!powerUpSpawned) {
+            killsSinceSpawn++;
+            const guaranteed = killsSinceSpawn >= POWERUP_GUARANTEED_KILLS;
+            if (guaranteed || Math.random() < POWERUP_DROP_CHANCE) {
+              powerUps.push(new PowerUp(a.x, a.y));
+              powerUpSpawned = true;
+            }
+          }
+        }
+      }
+    }
+    asteroids = asteroids.filter((a) => !a.dead).concat(newAsteroids);
+    bullets = bullets.filter((b) => !b.dead);
+
+    // Ship vs asteroid
+    if (ship.invincible <= 0) {
+      for (const a of asteroids) {
+        if (dist(ship, a) < ship.radius + a.radius * SHIP_COLLISION_FUDGE) {
+          killShip();
+          break;
+        }
+      }
+    }
+
+    // Level cleared
+    if (phase === "playing" && asteroids.length === 0) nextLevel();
+  }
+
+  // ── Draw ──
+  function draw() {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, W, H);
+
+    particles.forEach((p) => p.draw(ctx));
+    asteroids.forEach((a) => a.draw(ctx));
+    powerUps.forEach((p) => p.draw(ctx));
+    bullets.forEach((b) => b.draw(ctx));
+    if (phase !== "ready") ship.draw(ctx);
+  }
+
+  // ── Loop ──
+  function frame(ts: number) {
+    if (destroyed) return;
+    const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, MAX_DT);
+    lastTime = ts;
+    // Paused and over keep the last frame frozen: no updates, same draw.
+    if (phase === "ready") updateReady(dt);
+    else if (phase === "playing") updatePlaying(dt);
+    draw();
+    emit();
+    rafId = requestAnimationFrame(frame);
+  }
+
+  // ── Phase transitions ──
+  function start() {
+    if (phase !== "ready") return;
+    ship.reset();
+    clearInput();
+    phase = "playing";
+    lastTime = null;
+    emit();
+  }
+
+  function pause() {
+    if (phase !== "playing") return;
+    // Clearing keys avoids a key held during blur staying stuck
+    clearInput();
+    ship.thrusting = false;
+    phase = "paused";
+    emit();
+  }
+
+  function resume() {
+    if (phase !== "paused") return;
+    clearInput();
+    phase = "playing";
+    lastTime = null;
+    emit();
+  }
+
+  function end() {
+    if (phase === "over") return;
+    clearInput();
+    ship.thrusting = false;
+    phase = "over";
+    emit();
+  }
+
+  function restart() {
+    initRun();
+    clearInput();
+    ship.reset();
+    phase = "playing";
+    lastTime = null;
+    emit();
+  }
+
+  // ── Input listeners ──
+  function onKeyDown(e: KeyboardEvent) {
+    if (isEditable(e.target)) return;
+    if (phase !== "over" && GAME_KEYS.has(e.code)) e.preventDefault();
+
+    const isPauseKey = e.code === "KeyP" || e.code === "Escape";
+    switch (phase) {
+      case "ready":
+        if (e.code === "Space" && !e.repeat) start();
+        break;
+      case "playing":
+        if (isPauseKey) {
+          if (!e.repeat) pause();
+          break;
+        }
+        if (!keys[e.code]) justPressed[e.code] = true;
+        keys[e.code] = true;
+        break;
+      case "paused":
+        if (isPauseKey && !e.repeat) resume();
+        break;
+      case "over":
+        break;
+    }
+  }
+
+  function onKeyUp(e: KeyboardEvent) {
+    if (isEditable(e.target)) return;
+    keys[e.code] = false;
+  }
+
+  function onVisibilityChange() {
+    if (document.hidden) pause();
+  }
+
+  window.addEventListener("keydown", onKeyDown);
+  window.addEventListener("keyup", onKeyUp);
+  window.addEventListener("blur", pause);
+  document.addEventListener("visibilitychange", onVisibilityChange);
+
+  function destroy() {
+    if (destroyed) return;
+    destroyed = true;
+    cancelAnimationFrame(rafId);
+    window.removeEventListener("keydown", onKeyDown);
+    window.removeEventListener("keyup", onKeyUp);
+    window.removeEventListener("blur", pause);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+  }
+
+  initRun();
+  emit();
+  rafId = requestAnimationFrame(frame);
+
+  return { start, pause, resume, end, restart, destroy };
+};
