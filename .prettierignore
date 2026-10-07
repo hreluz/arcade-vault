@@ -1,0 +1,7 @@
+.next
+node_modules
+references
+package-lock.json
+next-env.d.ts
+.playwright-mcp
+.playwright-screenshots
