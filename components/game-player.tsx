@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import GameCanvas, { type GameCanvasHandle } from "@/components/game-canvas";
 import { ENGINES } from "@/lib/engines";
 import type { EngineSnapshot } from "@/lib/engines/types";
@@ -9,6 +9,8 @@ import type { Game } from "@/lib/games";
 
 type Run = { score: number; level: number };
 const NEW_RUN: Run = { score: 0, level: 1 };
+
+const CONTROLS = "← → ROTATE · ↑ THRUST · SPACE FIRE · P PAUSE";
 
 export default function GamePlayer({ game }: { game: Game }) {
   const factory = ENGINES[game.id];
@@ -34,7 +36,49 @@ export default function GamePlayer({ game }: { game: Game }) {
     return () => clearInterval(t);
   }, [factory, over, paused]);
 
-  const restart = () => {
+  // Engine games read everything from the latest snapshot; the rest keep the
+  // simulated state.
+  const phase = snapshot?.phase ?? "ready";
+  const view = factory
+    ? {
+        score: snapshot?.score ?? 0,
+        lives: snapshot?.lives ?? 3,
+        level: snapshot?.level ?? 1,
+        paused: phase === "paused",
+        over: phase === "over",
+      }
+    : { score: run.score, lives, level: run.level, paused, over };
+  const tripleShot = snapshot?.tripleShot ?? 0;
+
+  // A focused HUD button would swallow the next Space, so engine games drop
+  // focus after a click.
+  const releaseFocus = (e: MouseEvent<HTMLButtonElement>) => {
+    if (factory) e.currentTarget.blur();
+  };
+
+  const togglePause = (e: MouseEvent<HTMLButtonElement>) => {
+    if (factory) {
+      if (phase === "paused") engineRef.current?.resume();
+      else engineRef.current?.pause();
+    } else {
+      setPaused((p) => !p);
+    }
+    releaseFocus(e);
+  };
+
+  const end = (e: MouseEvent<HTMLButtonElement>) => {
+    if (factory) engineRef.current?.end();
+    else setOver(true);
+    releaseFocus(e);
+  };
+
+  const restart = (e: MouseEvent<HTMLButtonElement>) => {
+    if (factory) {
+      engineRef.current?.restart();
+      setSaved(false);
+      releaseFocus(e);
+      return;
+    }
     setRun(NEW_RUN);
     setLives(3);
     setPaused(false);
@@ -52,22 +96,28 @@ export default function GamePlayer({ game }: { game: Game }) {
           </div>
           <div className="hud-stat">
             <div className="l">Score</div>
-            <div className="v">{run.score.toLocaleString("en-US")}</div>
+            <div className="v">{view.score.toLocaleString("en-US")}</div>
           </div>
           <div className="hud-stat lives">
             <div className="l">Lives</div>
-            <div className="v">{"♥ ".repeat(lives).trim() || "—"}</div>
+            <div className="v">{"♥ ".repeat(view.lives).trim() || "—"}</div>
           </div>
           <div className="hud-stat level">
             <div className="l">Level</div>
-            <div className="v">{String(run.level).padStart(2, "0")}</div>
+            <div className="v">{String(view.level).padStart(2, "0")}</div>
           </div>
+          {tripleShot > 0 && (
+            <div className="hud-stat triple">
+              <div className="l">3X</div>
+              <div className="v">{tripleShot.toFixed(1)}s</div>
+            </div>
+          )}
         </div>
         <div className="hud-actions">
-          <button type="button" className="btn yellow" onClick={() => setPaused((p) => !p)}>
-            {paused ? "RESUME" : "PAUSE"}
+          <button type="button" className="btn yellow" onClick={togglePause}>
+            {view.paused ? "RESUME" : "PAUSE"}
           </button>
-          <button type="button" className="btn magenta" onClick={() => setOver(true)}>
+          <button type="button" className="btn magenta" onClick={end}>
             END
           </button>
           <Link href={`/games/${game.id}`} className="btn ghost">
@@ -89,12 +139,21 @@ export default function GamePlayer({ game }: { game: Game }) {
               <div className="player-ship" />
             </div>
           )}
-          {paused && (
+          {factory && phase === "ready" && (
+            <div className="crt-content ready-overlay z-5">
+              <div className="ready-keys">
+                <div className="ready-prompt pixel neon-cyan">PRESS SPACE TO START</div>
+                <div className="ready-controls mono">{CONTROLS}</div>
+              </div>
+              <div className="ready-touch pixel neon-magenta">KEYBOARD REQUIRED</div>
+            </div>
+          )}
+          {view.paused && (
             <div className="crt-content z-5 bg-black/60">
               <div>
                 <div className="pixel neon-yellow text-[22px]">PAUSED</div>
                 <div className="mono mt-2.5 text-[11px] tracking-[0.16em] text-ink-dim">
-                  PRESS RESUME TO CONTINUE
+                  {factory ? "PRESS P OR RESUME TO CONTINUE" : "PRESS RESUME TO CONTINUE"}
                 </div>
               </div>
             </div>
@@ -103,16 +162,16 @@ export default function GamePlayer({ game }: { game: Game }) {
         <div className="crt-bottom">
           <span className="led">SIGNAL OK</span>
           <span>{game.title} · CRT-83 · 60 HZ</span>
-          <span>LOAD · 1MB</span>
+          {factory ? <span className="crt-legend">{CONTROLS}</span> : <span>LOAD · 1MB</span>}
         </div>
       </div>
 
-      {over && (
+      {view.over && (
         <div className="modal-bd">
           <div className="modal" role="dialog" aria-modal="true" aria-labelledby="game-over-title">
             <h2 id="game-over-title">GAME OVER</h2>
             <div className="final-label">FINAL SCORE</div>
-            <div className="final">{run.score.toLocaleString("en-US")}</div>
+            <div className="final">{view.score.toLocaleString("en-US")}</div>
             {!saved ? (
               <div className="input-row">
                 <input

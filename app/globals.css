@@ -747,6 +747,33 @@
     width: 100%;
     height: 100%;
   }
+  .hud-stat.triple .v { color: var(--magenta); text-shadow: 0 0 6px rgba(255,0,110,0.5); }
+
+  /* ready screen: an attract-mode prompt over the drifting playfield */
+  .ready-overlay {
+    padding: 0 16px;
+    background: radial-gradient(60% 45% at 50% 50%, rgba(0,0,0,0.7), transparent);
+  }
+  .ready-prompt {
+    font-size: clamp(11px, 2.4vw, 20px);
+    animation: blink 1.2s steps(1, end) infinite;
+  }
+  .ready-controls {
+    margin-top: 14px;
+    font-size: clamp(9px, 1.4vw, 11px);
+    letter-spacing: 0.16em;
+    color: var(--ink-dim);
+  }
+  .ready-touch { display: none; font-size: clamp(11px, 2.4vw, 18px); }
+  .crt-bottom { gap: 12px; }
+  .crt-bottom .crt-legend { text-align: right; }
+  @media (pointer: coarse) {
+    .ready-keys { display: none; }
+    .ready-touch { display: block; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ready-prompt { animation: none; }
+  }
 
   /* game over modal */
   .modal-bd {
