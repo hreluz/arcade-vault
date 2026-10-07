@@ -13,6 +13,12 @@ export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 # shellcheck disable=SC1091
 source "$NVM_DIR/nvm.sh" >/dev/null 2>&1 && nvm use --silent >/dev/null 2>&1
 
+# Strip whitespace in text files (skips binaries): trailing spaces/tabs on every line,
+# runs of blank lines collapsed to one, and blank lines at the start/end of the file.
+if grep -Iq . "$file"; then
+  perl -0777 -i -pe 's/[ \t]+$//mg; s/\n{3,}/\n\n/g; s/\A\n+//; s/\n*\z/\n/' "$file"
+fi
+
 npx --no-install prettier --write --ignore-unknown --log-level warn "$file" >&2
 
 case "$file" in

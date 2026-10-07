@@ -1,3 +1,4 @@
 export const Demo = () => {
-  return <div>Clark Kent</div>;
+  const name = "Clark Kent";
+  return <div>{name}</div>;
 };
