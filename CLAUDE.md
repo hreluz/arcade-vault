@@ -34,3 +34,13 @@ Use always /frontend-design to design the user interface
 - **Next.js 16.3 (App Router) + React 19.2.** APIs differ from older Next.js; check `node_modules/next/dist/docs/` (`01-app/`, `03-architecture/`) before using a Next.js API. Example: the root layout types its props with the global `LayoutProps<"/">` helper instead of hand-written prop types.
 - **Tailwind CSS v4** through `@tailwindcss/postcss`. No `tailwind.config.js`; theme tokens live in `app/globals.css` via `@import "tailwindcss"` and `@theme inline`, mapped from CSS variables (`--background`, `--foreground`, Geist font variables set in `app/layout.tsx`).
 - **TypeScript strict mode.** The `@/*` path alias points to the repo root (not `src/`), e.g. `@/app/...`.
+
+## Supabase
+
+Project ref `sislzmvgqurapxcyzsww`, reachable through the `supabase` MCP server in `.mcp.json`. Clients live in `lib/supabase/` and are built on `@supabase/ssr`:
+
+- `@/lib/supabase/client` — `createClient()` for Client Components (browser).
+- `@/lib/supabase/server` — `await createClient()` for Server Components, Server Actions and Route Handlers. Guarded by `server-only`; create one per request.
+- Both read `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (see `.env.template`) through `getSupabaseEnv()`, which throws if either is missing. Use the publishable key only; never put the secret / service-role key in a `NEXT_PUBLIC_` var. Every table must have RLS enabled.
+- `lib/supabase/database.types.ts` is generated, never hand-edited. After any migration, regenerate it with the Supabase MCP `generate_typescript_types` tool and overwrite the file.
+- There is no `proxy.ts` session refresh yet; it comes with authentication.
