@@ -741,6 +741,13 @@
     50% { transform: translate(20px, 10px); }
   }
 
+  /* real in-screen game: 800×600 logical canvas scaled to the 4:3 screen */
+  .game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
   /* game over modal */
   .modal-bd {
     position: fixed; inset: 0; z-index: 80;

@@ -1,13 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import GameCanvas, { type GameCanvasHandle } from "@/components/game-canvas";
+import { ENGINES } from "@/lib/engines";
+import type { EngineSnapshot } from "@/lib/engines/types";
 import type { Game } from "@/lib/games";
 
 type Run = { score: number; level: number };
 const NEW_RUN: Run = { score: 0, level: 1 };
 
 export default function GamePlayer({ game }: { game: Game }) {
+  const factory = ENGINES[game.id];
+  const engineRef = useRef<GameCanvasHandle>(null);
+  const [snapshot, setSnapshot] = useState<EngineSnapshot | null>(null);
   const [run, setRun] = useState<Run>(NEW_RUN);
   const [lives, setLives] = useState(3);
   const [paused, setPaused] = useState(false);
@@ -15,9 +21,10 @@ export default function GamePlayer({ game }: { game: Game }) {
   const [name, setName] = useState("GUEST");
   const [saved, setSaved] = useState(false);
 
-  // Simulated play: the score ticks up and the level bumps every ~2,500 points.
+  // Simulated play (games without a real engine): the score ticks up and the
+  // level bumps every ~2,500 points.
   useEffect(() => {
-    if (over || paused) return;
+    if (factory || over || paused) return;
     const t = setInterval(() => {
       setRun(({ score, level }) => {
         const next = score + Math.floor(10 + Math.random() * 90);
@@ -25,7 +32,7 @@ export default function GamePlayer({ game }: { game: Game }) {
       });
     }, 220);
     return () => clearInterval(t);
-  }, [over, paused]);
+  }, [factory, over, paused]);
 
   const restart = () => {
     setRun(NEW_RUN);
@@ -71,13 +78,17 @@ export default function GamePlayer({ game }: { game: Game }) {
 
       <div className="crt">
         <div className="crt-screen">
-          <div className="game-arena" aria-hidden="true">
-            <div className="grid-floor" />
-            <div className="enemy e1" />
-            <div className="enemy e2" />
-            <div className="enemy e3" />
-            <div className="player-ship" />
-          </div>
+          {factory ? (
+            <GameCanvas factory={factory} onChange={setSnapshot} ref={engineRef} />
+          ) : (
+            <div className="game-arena" aria-hidden="true">
+              <div className="grid-floor" />
+              <div className="enemy e1" />
+              <div className="enemy e2" />
+              <div className="enemy e3" />
+              <div className="player-ship" />
+            </div>
+          )}
           {paused && (
             <div className="crt-content z-5 bg-black/60">
               <div>
