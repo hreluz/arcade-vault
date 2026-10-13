@@ -39,7 +39,7 @@ export const TICKER: TickerRow[] = [
   { player: "PX_KAI", gameId: "glutton", score: 96400, ago: "5 min ago", color: "yellow" },
   { player: "Z3R0COOL", gameId: "invaders", score: 54190, ago: "8 min ago", color: "green" },
   { player: "VAULT_07", gameId: "asteroids", score: 41200, ago: "12 min ago", color: "cyan" },
-  { player: "GLITCHA", gameId: "block-buster", score: 28450, ago: "18 min ago", color: "cyan" },
+  { player: "GLITCHA", gameId: "arkanoid", score: 28450, ago: "18 min ago", color: "cyan" },
   { player: "ARKADYA", gameId: "serpentine", score: 7820, ago: "24 min ago", color: "green" },
   { player: "CYBER_LU", gameId: "froggeria", score: 18900, ago: "31 min ago", color: "yellow" },
 ];
