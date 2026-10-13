@@ -45,7 +45,7 @@ export default function GameCard({ game }: { game: Game }) {
         <div className="row">
           <div className="score-badge">
             <span>BEST SCORE</span>
-            <b>{game.best.toLocaleString("en-US")}</b>
+            <b>{game.best === null ? "—" : game.best.toLocaleString("en-US")}</b>
           </div>
           {/* The whole card is the link; PLAY is its visual call to action. */}
           <span className={"btn " + BUTTON_VARIANT[game.color]}>PLAY</span>

@@ -37,10 +37,22 @@ Use always /frontend-design to design the user interface
 
 ## Supabase
 
-Project ref `sislzmvgqurapxcyzsww`, reachable through the `supabase` MCP server in `.mcp.json`. Clients live in `lib/supabase/` and are built on `@supabase/ssr`:
+Project ref `sislzmvgqurapxcyzsww`, reachable through the `supabase` MCP server in `.mcp.json`. Clients live in `lib/supabase/`:
 
-- `@/lib/supabase/client` — `createClient()` for Client Components (browser).
-- `@/lib/supabase/server` — `await createClient()` for Server Components, Server Actions and Route Handlers. Guarded by `server-only`; create one per request.
-- Both read `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (see `.env.template`) through `getSupabaseEnv()`, which throws if either is missing. Use the publishable key only; never put the secret / service-role key in a `NEXT_PUBLIC_` var. Every table must have RLS enabled.
+- `@/lib/supabase/client` — `createClient()` for Client Components (browser), built on `@supabase/ssr`.
+- `@/lib/supabase/server` — `await createClient()` for Server Components, Server Actions and Route Handlers, built on `@supabase/ssr`. Reads cookies, so it makes a page dynamic. Guarded by `server-only`; create one per request. Kept for future auth-aware code.
+- `@/lib/supabase/public` — `createPublicClient()`, a cookie-less `supabase-js` client for public reads and anonymous writes on the server. Guarded by `server-only`. Pages that use it stay static, so `generateStaticParams` can query Supabase at build time.
+- All three read `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (see `.env.template`) through `getSupabaseEnv()`, which throws if either is missing. Use the publishable key only; never put the secret / service-role key in a `NEXT_PUBLIC_` var. Every table must have RLS enabled.
 - `lib/supabase/database.types.ts` is generated, never hand-edited. After any migration, regenerate it with the Supabase MCP `generate_typescript_types` tool and overwrite the file.
 - There is no `proxy.ts` session refresh yet; it comes with authentication.
+
+Data access:
+
+- `@/lib/catalog` (server-only) is the only place pages read game data: `getGames()` and `getGame(id)` (throw on error, caught by `app/error.tsx`) and `getTopScores(gameId, limit)` (returns `null` on error so a single board shows `SCORES UNAVAILABLE`). It uses only `createPublicClient()`.
+- Scores are written by the `saveScore` Server Action in `app/games/[id]/play/actions.ts` (validation, `ENGINES` check, per-IP rate limit, `revalidatePath`). Ranking order everywhere is `score desc, created_at asc`.
+- `npm run build` needs Supabase reachable and both env vars set, because `generateStaticParams` reads the `games` table.
+
+Migrations are applied with the MCP `apply_migration` tool and mirrored in `supabase/migrations/<version>_<name>.sql`, using the version from `list_migrations` and the exact SQL that was applied. Add the file in the same change as every new migration. In order:
+
+- `create_games` — `games` table (catalog, seeded with the 8 games, `sort_order`), RLS with public `select`. Catalog changes go through new migrations; there is no write path in the app.
+- `create_scores` — `scores` table (one row per saved run, CHECK on name `^[A-Z0-9_]{1,10}$` and score `0..10000000`), RLS with public `select` and `insert` (no update/delete), and the `game_best_scores` view (`security_invoker`).

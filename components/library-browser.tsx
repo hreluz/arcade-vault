@@ -2,23 +2,23 @@
 
 import { useMemo, useState } from "react";
 import GameCard from "@/components/game-card";
-import { CATEGORIES, GAMES } from "@/lib/games";
+import { CATEGORIES, type Game } from "@/lib/games";
 
 type CategoryFilter = (typeof CATEGORIES)[number];
 
-export default function LibraryBrowser() {
+export default function LibraryBrowser({ games }: { games: Game[] }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<CategoryFilter>("ALL");
 
   // Search matches the title or the short description (e.g. "neon" finds BLOCK BUSTER).
   const filtered = useMemo(() => {
     const query = q.toLowerCase();
-    return GAMES.filter(
+    return games.filter(
       (g) =>
         (cat === "ALL" || g.cat === cat) &&
         (g.title.toLowerCase().includes(query) || g.short.toLowerCase().includes(query)),
     );
-  }, [q, cat]);
+  }, [games, q, cat]);
 
   return (
     <>
