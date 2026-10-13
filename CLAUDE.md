@@ -52,7 +52,7 @@ Data access:
 - Scores are written by the `saveScore` Server Action in `app/games/[id]/play/actions.ts` (validation, `ENGINES` check, per-IP rate limit, `revalidatePath`). Ranking order everywhere is `score desc, created_at asc`.
 - `npm run build` needs Supabase reachable and both env vars set, because `generateStaticParams` reads the `games` table.
 
-Migrations (applied with the MCP `apply_migration` tool, in order):
+Migrations are applied with the MCP `apply_migration` tool and mirrored in `supabase/migrations/<version>_<name>.sql`, using the version from `list_migrations` and the exact SQL that was applied. Add the file in the same change as every new migration. In order:
 
 - `create_games` — `games` table (catalog, seeded with the 8 games, `sort_order`), RLS with public `select`. Catalog changes go through new migrations; there is no write path in the app.
 - `create_scores` — `scores` table (one row per saved run, CHECK on name `^[A-Z0-9_]{1,10}$` and score `0..10000000`), RLS with public `select` and `insert` (no update/delete), and the `game_best_scores` view (`security_invoker`).
