@@ -1,14 +1,15 @@
 import { notFound } from "next/navigation";
 import GamePlayer from "@/components/game-player";
-import { GAMES, getGame } from "@/lib/games";
+import { getGame, getGames } from "@/lib/catalog";
 
-export function generateStaticParams() {
-  return GAMES.map((g) => ({ id: g.id }));
+export async function generateStaticParams() {
+  const games = await getGames();
+  return games.map((g) => ({ id: g.id }));
 }
 
 export default async function PlayPage(props: PageProps<"/games/[id]/play">) {
   const { id } = await props.params;
-  const game = getGame(id);
+  const game = await getGame(id);
   if (!game) notFound();
 
   return <GamePlayer game={game} />;

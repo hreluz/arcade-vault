@@ -3,18 +3,20 @@ import FeatureIcon from "@/components/feature-icon";
 import HomeSilhouettes from "@/components/home-silhouettes";
 import MiniCard from "@/components/mini-card";
 import Reveal from "@/components/reveal";
-import { GAMES, getGame } from "@/lib/games";
+import { getGames } from "@/lib/catalog";
 import { FAQ, FEATURES, PRICING_PERKS, TICKER, TOP_PLAYERS } from "@/lib/home-content";
-
-const STATS = [
-  { n: `${GAMES.length}`, u: "GAMES", s: "AND COUNTING" },
-  { n: "THOUSANDS", u: "OF GAMES", s: "PLAYED EVERY DAY" },
-  { n: "GLOBAL", u: "RANKING", s: "COMPETE WITH THE WORLD" },
-];
 
 const TOP_CLASS = ["top1", "top2", "top3"];
 
-export default function Home() {
+export default async function Home() {
+  const games = await getGames();
+  const titleById = new Map(games.map((g) => [g.id, g.title]));
+  const stats = [
+    { n: `${games.length}`, u: "GAMES", s: "AND COUNTING" },
+    { n: "THOUSANDS", u: "OF GAMES", s: "PLAYED EVERY DAY" },
+    { n: "GLOBAL", u: "RANKING", s: "COMPETE WITH THE WORLD" },
+  ];
+
   return (
     <div className="home fade-in">
       {/* HERO */}
@@ -75,7 +77,7 @@ export default function Home() {
           <div className="section-rule" />
         </div>
         <div className="mini-rail">
-          {GAMES.slice(0, 6).map((g) => (
+          {games.slice(0, 6).map((g) => (
             <MiniCard key={g.id} game={g} />
           ))}
         </div>
@@ -89,7 +91,7 @@ export default function Home() {
       {/* STATS */}
       <Reveal className="home-stats">
         <div className="stats-inner">
-          {STATS.map((st, i) => (
+          {stats.map((st, i) => (
             <div key={st.u} className="stat-block" style={{ transitionDelay: i * 90 + "ms" }}>
               <div className="stat-n neon-yellow">{st.n}</div>
               <div className="stat-u pixel">{st.u}</div>
@@ -115,7 +117,7 @@ export default function Home() {
               {TICKER.map((r, i) => (
                 <div key={r.player + r.gameId} className="tick-row" style={{ animationDelay: i * 60 + "ms" }}>
                   <span className={"tk-p neon-" + r.color}>{r.player}</span>
-                  <span className="tk-mid">▸ {getGame(r.gameId)!.title}</span>
+                  <span className="tk-mid">▸ {titleById.get(r.gameId)}</span>
                   <span className="tk-s">+{r.score.toLocaleString("en-US")}</span>
                   <span className="tk-t">{r.ago}</span>
                 </div>

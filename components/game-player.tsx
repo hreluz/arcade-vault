@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, useTransition, type CSSProperties, type MouseEvent } from "react";
+import { saveScore, type SaveScoreResult } from "@/app/games/[id]/play/actions";
 import GameCanvas, { type GameCanvasHandle } from "@/components/game-canvas";
 import { ENGINES } from "@/lib/engines";
 import type { EngineSnapshot } from "@/lib/engines/types";
@@ -12,6 +13,19 @@ const NEW_RUN: Run = { score: 0, level: 1 };
 
 const CONTROLS = "← → ROTATE · ↑ THRUST · SPACE FIRE · P PAUSE";
 
+type SaveState = { status: "idle" } | { status: "saved"; rank: number } | { status: "error"; message: string };
+const IDLE: SaveState = { status: "idle" };
+
+const SAVE_ERRORS: Record<Extract<SaveScoreResult, { status: "error" }>["reason"], string> = {
+  invalid: "USE 1-10 LETTERS, NUMBERS OR _",
+  "no-engine": "THIS GAME CAN'T SAVE SCORES",
+  "rate-limited": "TOO MANY SAVES. WAIT A MINUTE AND TRY AGAIN",
+  failed: "COULDN'T SAVE YOUR SCORE. TRY AGAIN",
+};
+
+// Same rule as the database CHECK: upper-case A-Z, 0-9 and _, at most 10 characters.
+const cleanName = (value: string) => value.toUpperCase().replace(/[^A-Z0-9_]/g, "").slice(0, 10);
+
 export default function GamePlayer({ game }: { game: Game }) {
   const factory = ENGINES[game.id];
   const engineRef = useRef<GameCanvasHandle>(null);
@@ -21,7 +35,8 @@ export default function GamePlayer({ game }: { game: Game }) {
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
   const [name, setName] = useState("GUEST");
-  const [saved, setSaved] = useState(false);
+  const [save, setSave] = useState<SaveState>(IDLE);
+  const [saving, startSaving] = useTransition();
 
   // Simulated play (games without a real engine): the score ticks up and the
   // level bumps every ~2,500 points.
@@ -75,7 +90,7 @@ export default function GamePlayer({ game }: { game: Game }) {
   const restart = (e: MouseEvent<HTMLButtonElement>) => {
     if (factory) {
       engineRef.current?.restart();
-      setSaved(false);
+      setSave(IDLE);
       releaseFocus(e);
       return;
     }
@@ -83,8 +98,26 @@ export default function GamePlayer({ game }: { game: Game }) {
     setLives(3);
     setPaused(false);
     setOver(false);
-    setSaved(false);
+    setSave(IDLE);
   };
+
+  const submitScore = () => {
+    startSaving(async () => {
+      try {
+        const result = await saveScore({ gameId: game.id, name, score: view.score });
+        setSave(
+          result.status === "ok"
+            ? { status: "saved", rank: result.rank }
+            : { status: "error", message: SAVE_ERRORS[result.reason] },
+        );
+      } catch {
+        // Network failure reaching the Server Action.
+        setSave({ status: "error", message: SAVE_ERRORS.failed });
+      }
+    });
+  };
+
+  const savedText = save.status === "saved" ? `▸ SCORE SAVED — RANK #${String(save.rank).padStart(2, "0")}_` : "";
 
   return (
     <div className="av-player fade-in">
@@ -172,23 +205,42 @@ export default function GamePlayer({ game }: { game: Game }) {
             <h2 id="game-over-title">GAME OVER</h2>
             <div className="final-label">FINAL SCORE</div>
             <div className="final">{view.score.toLocaleString("en-US")}</div>
-            {!saved ? (
-              <div className="input-row">
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value.toUpperCase().slice(0, 10))}
-                  placeholder="YOUR INITIALS"
-                  aria-label="Your initials"
-                />
-                <button type="button" className="btn yellow" onClick={() => setSaved(true)}>
-                  SAVE SCORE
-                </button>
+            {!factory ? (
+              <div className="save-demo">SCORES NOT RECORDED FOR THIS DEMO</div>
+            ) : save.status === "saved" ? (
+              <div className="toast-saved" role="status" style={{ "--chars": savedText.length } as CSSProperties}>
+                {savedText}
               </div>
             ) : (
-              <div className="toast-saved">▸ SCORE SAVED_</div>
+              <>
+                <form
+                  className="input-row"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    submitScore();
+                  }}
+                >
+                  <input
+                    value={name}
+                    onChange={(e) => setName(cleanName(e.target.value))}
+                    placeholder="YOUR INITIALS"
+                    aria-label="Your initials"
+                    aria-describedby={save.status === "error" ? "save-error" : undefined}
+                    disabled={saving}
+                  />
+                  <button type="submit" className="btn yellow" disabled={saving || name === ""}>
+                    {saving ? "SAVING…" : "SAVE SCORE"}
+                  </button>
+                </form>
+                {save.status === "error" && !saving && (
+                  <div id="save-error" className="save-error" role="alert">
+                    ▸ {save.message}
+                  </div>
+                )}
+              </>
             )}
             <div className="actions">
-              <button type="button" className="btn" onClick={restart}>
+              <button type="button" className="btn" onClick={restart} disabled={saving}>
                 PLAY AGAIN
               </button>
               <Link href="/games" className="btn magenta">
