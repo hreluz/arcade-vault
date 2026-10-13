@@ -55,3 +55,4 @@ Migrations are applied with the MCP `apply_migration` tool and mirrored in `supa
 
 - `create_games` — `games` table (catalog, seeded with the 8 games, `sort_order`), RLS with public `select`. Catalog changes go through new migrations; there is no write path in the app.
 - `create_scores` — `scores` table (one row per saved run, CHECK on name `^[A-Z0-9_]{1,10}$` and score `0..10000000`), RLS with public `select` and `insert` (no update/delete), and the `game_best_scores` view (`security_invoker`).
+- `replace_falldown_with_tetris` — swaps the FALLDOWN placeholder for the real Tetris row (`tetris`, same `sort_order` 2).
