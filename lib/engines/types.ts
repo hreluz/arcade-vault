@@ -1,11 +1,13 @@
 export type EnginePhase = "ready" | "playing" | "paused" | "over";
 
+export type HudStat = { key: string; label: string; value: string }; // value already formatted, e.g. "4.2s"
+
 export type EngineSnapshot = {
   phase: EnginePhase;
   score: number;
-  lives: number;
   level: number;
-  tripleShot: number; // remaining seconds, rounded to 0.1; 0 when inactive
+  lives: number | null; // null = the game has no lives; the HUD hides the stat
+  extras: HudStat[]; // game-specific HUD stats, in display order; [] when none
 };
 
 export type EngineCallbacks = {
@@ -22,3 +24,11 @@ export interface GameEngine {
 }
 
 export type EngineFactory = (canvas: HTMLCanvasElement, cb: EngineCallbacks) => GameEngine;
+
+// Compares HUD extras by value, so a fresh array each frame doesn't re-render React.
+export function sameExtras(a: HudStat[], b: HudStat[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((s, i) => s.key === b[i].key && s.label === b[i].label && s.value === b[i].value)
+  );
+}

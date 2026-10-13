@@ -35,7 +35,7 @@ export const FEATURES: Feature[] = [
 ];
 
 export const TICKER: TickerRow[] = [
-  { player: "NEONFOX", gameId: "falldown", score: 184220, ago: "2 min ago", color: "magenta" },
+  { player: "NEONFOX", gameId: "tetris", score: 184220, ago: "2 min ago", color: "magenta" },
   { player: "PX_KAI", gameId: "glutton", score: 96400, ago: "5 min ago", color: "yellow" },
   { player: "Z3R0COOL", gameId: "invaders", score: 54190, ago: "8 min ago", color: "green" },
   { player: "VAULT_07", gameId: "asteroids", score: 41200, ago: "12 min ago", color: "cyan" },

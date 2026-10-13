@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Arcade Vault is a platform for playing games online and competing for the highest score. The repo is currently a fresh `create-next-app` scaffold: only `app/layout.tsx`, `app/page.tsx` and `app/globals.css` exist, all still template content.
 
-Development follows a spec-driven workflow using the `/spec` and `/spec-impl` skills from [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (install with `npx skills@latest add Klerith/fernando-skills`). Write or update a spec before implementing a feature.
+Development follows a spec-driven workflow using the `/spec` and `/spec-impl` skills from [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (install with `npx skills@latest add Klerith/fernando-skills`). Write or update a spec before implementing a feature. To bring a game from `references/started-games/` onto the platform (engine, catalog row, leaderboards), use the project skill `/new-game <folder>` (`.claude/skills/new-game/`), which writes the spec for `/spec-impl`.
 
 ## Commands
 
@@ -27,7 +27,6 @@ There is no test runner configured yet.
 ## Skills
 
 Use always /frontend-design to design the user interface
-
 
 ## Stack and conventions
 
@@ -56,3 +55,4 @@ Migrations are applied with the MCP `apply_migration` tool and mirrored in `supa
 
 - `create_games` — `games` table (catalog, seeded with the 8 games, `sort_order`), RLS with public `select`. Catalog changes go through new migrations; there is no write path in the app.
 - `create_scores` — `scores` table (one row per saved run, CHECK on name `^[A-Z0-9_]{1,10}$` and score `0..10000000`), RLS with public `select` and `insert` (no update/delete), and the `game_best_scores` view (`security_invoker`).
+- `replace_falldown_with_tetris` — swaps the FALLDOWN placeholder for the real Tetris row (`tetris`, same `sort_order` 2).

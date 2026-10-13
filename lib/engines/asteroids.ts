@@ -2,7 +2,7 @@
 // Classes are stateless definitions; every piece of mutable game state lives in
 // the createAsteroids closure.
 
-import type { EngineFactory, EnginePhase, EngineSnapshot } from "@/lib/engines/types";
+import { sameExtras, type EngineFactory, type EnginePhase, type EngineSnapshot } from "@/lib/engines/types";
 
 // ── Canvas ────────────────────────────────────────────────────────────────────
 const W = 800;
@@ -458,12 +458,14 @@ export const createAsteroids: EngineFactory = (canvas, cb) => {
 
   // ── Snapshot ──
   function snapshot(): EngineSnapshot {
+    // Remaining seconds, rounded to 0.1; the stat hides once it reaches 0
+    const tripleShot = ship.tripleShot > 0 ? Math.round(ship.tripleShot * 10) / 10 : 0;
     return {
       phase,
       score,
-      lives,
       level,
-      tripleShot: ship.tripleShot > 0 ? Math.round(ship.tripleShot * 10) / 10 : 0,
+      lives,
+      extras: tripleShot > 0 ? [{ key: "triple", label: "3X", value: `${tripleShot.toFixed(1)}s` }] : [],
     };
   }
 
@@ -477,7 +479,7 @@ export const createAsteroids: EngineFactory = (canvas, cb) => {
       prev.score === next.score &&
       prev.lives === next.lives &&
       prev.level === next.level &&
-      prev.tripleShot === next.tripleShot
+      sameExtras(prev.extras, next.extras)
     ) {
       return;
     }

@@ -11,8 +11,6 @@ import type { Game } from "@/lib/games";
 type Run = { score: number; level: number };
 const NEW_RUN: Run = { score: 0, level: 1 };
 
-const CONTROLS = "← → ROTATE · ↑ THRUST · SPACE FIRE · P PAUSE";
-
 type SaveState = { status: "idle" } | { status: "saved"; rank: number } | { status: "error"; message: string };
 const IDLE: SaveState = { status: "idle" };
 
@@ -27,7 +25,8 @@ const SAVE_ERRORS: Record<Extract<SaveScoreResult, { status: "error" }>["reason"
 const cleanName = (value: string) => value.toUpperCase().replace(/[^A-Z0-9_]/g, "").slice(0, 10);
 
 export default function GamePlayer({ game }: { game: Game }) {
-  const factory = ENGINES[game.id];
+  const entry = ENGINES[game.id];
+  const factory = entry?.factory;
   const engineRef = useRef<GameCanvasHandle>(null);
   const [snapshot, setSnapshot] = useState<EngineSnapshot | null>(null);
   const [run, setRun] = useState<Run>(NEW_RUN);
@@ -57,13 +56,13 @@ export default function GamePlayer({ game }: { game: Game }) {
   const view = factory
     ? {
         score: snapshot?.score ?? 0,
-        lives: snapshot?.lives ?? 3,
+        lives: snapshot ? snapshot.lives : 3,
         level: snapshot?.level ?? 1,
         paused: phase === "paused",
         over: phase === "over",
       }
     : { score: run.score, lives, level: run.level, paused, over };
-  const tripleShot = snapshot?.tripleShot ?? 0;
+  const extras = snapshot?.extras ?? [];
 
   // A focused HUD button would swallow the next Space, so engine games drop
   // focus after a click.
@@ -131,20 +130,22 @@ export default function GamePlayer({ game }: { game: Game }) {
             <div className="l">Score</div>
             <div className="v">{view.score.toLocaleString("en-US")}</div>
           </div>
-          <div className="hud-stat lives">
-            <div className="l">Lives</div>
-            <div className="v">{"♥ ".repeat(view.lives).trim() || "—"}</div>
-          </div>
+          {view.lives !== null && (
+            <div className="hud-stat lives">
+              <div className="l">Lives</div>
+              <div className="v">{"♥ ".repeat(view.lives).trim() || "—"}</div>
+            </div>
+          )}
           <div className="hud-stat level">
             <div className="l">Level</div>
             <div className="v">{String(view.level).padStart(2, "0")}</div>
           </div>
-          {tripleShot > 0 && (
-            <div className="hud-stat triple">
-              <div className="l">3X</div>
-              <div className="v">{tripleShot.toFixed(1)}s</div>
+          {extras.map((stat) => (
+            <div key={stat.key} className={`hud-stat ${stat.key}`}>
+              <div className="l">{stat.label}</div>
+              <div className="v">{stat.value}</div>
             </div>
-          )}
+          ))}
         </div>
         <div className="hud-actions">
           <button type="button" className="btn yellow" onClick={togglePause}>
@@ -161,8 +162,8 @@ export default function GamePlayer({ game }: { game: Game }) {
 
       <div className="crt">
         <div className="crt-screen">
-          {factory ? (
-            <GameCanvas factory={factory} onChange={setSnapshot} ref={engineRef} />
+          {entry ? (
+            <GameCanvas factory={entry.factory} onChange={setSnapshot} ref={engineRef} />
           ) : (
             <div className="game-arena" aria-hidden="true">
               <div className="grid-floor" />
@@ -176,7 +177,7 @@ export default function GamePlayer({ game }: { game: Game }) {
             <div className="crt-content ready-overlay z-5">
               <div className="ready-keys">
                 <div className="ready-prompt pixel neon-cyan">PRESS SPACE TO START</div>
-                <div className="ready-controls mono">{CONTROLS}</div>
+                <div className="ready-controls mono">{entry?.controls}</div>
               </div>
               <div className="ready-touch pixel neon-magenta">KEYBOARD REQUIRED</div>
             </div>
@@ -195,7 +196,7 @@ export default function GamePlayer({ game }: { game: Game }) {
         <div className="crt-bottom">
           <span className="led">SIGNAL OK</span>
           <span>{game.title} · CRT-83 · 60 HZ</span>
-          {factory ? <span className="crt-legend">{CONTROLS}</span> : <span>LOAD · 1MB</span>}
+          {entry ? <span className="crt-legend">{entry.controls}</span> : <span>LOAD · 1MB</span>}
         </div>
       </div>
 
