@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Arcade Vault is a platform for playing games online and competing for the highest score. The repo is currently a fresh `create-next-app` scaffold: only `app/layout.tsx`, `app/page.tsx` and `app/globals.css` exist, all still template content.
 
-Development follows a spec-driven workflow using the `/spec` and `/spec-impl` skills from [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (install with `npx skills@latest add Klerith/fernando-skills`). Write or update a spec before implementing a feature.
+Development follows a spec-driven workflow using the `/spec` and `/spec-impl` skills from [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (install with `npx skills@latest add Klerith/fernando-skills`). Write or update a spec before implementing a feature. To bring a game from `references/started-games/` onto the platform (engine, catalog row, leaderboards), use the project skill `/new-game <folder>` (`.claude/skills/new-game/`), which writes the spec for `/spec-impl`.
 
 ## Commands
 
@@ -27,7 +27,6 @@ There is no test runner configured yet.
 ## Skills
 
 Use always /frontend-design to design the user interface
-
 
 ## Stack and conventions
 
