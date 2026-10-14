@@ -33,6 +33,7 @@ Use always /frontend-design to design the user interface
 - **Next.js 16.3 (App Router) + React 19.2.** APIs differ from older Next.js; check `node_modules/next/dist/docs/` (`01-app/`, `03-architecture/`) before using a Next.js API. Example: the root layout types its props with the global `LayoutProps<"/">` helper instead of hand-written prop types.
 - **Tailwind CSS v4** through `@tailwindcss/postcss`. No `tailwind.config.js`; theme tokens live in `app/globals.css` via `@import "tailwindcss"` and `@theme inline`, mapped from CSS variables (`--background`, `--foreground`, Geist font variables set in `app/layout.tsx`).
 - **TypeScript strict mode.** The `@/*` path alias points to the repo root (not `src/`), e.g. `@/app/...`.
+- **Game sound.** An engine with sound sets `sound: true` on its `ENGINES` entry (the player then shows the SOUND ON / OFF button) and implements the optional `setMuted()`. It creates its `AudioContext` only inside a user gesture (`start` / `resume` / `restart`) and closes it in `destroy()`. The setting is shared by every game and stored in `localStorage["arcade-vault:sound"]` (`"on"` | `"off"`) through `useSoundSetting()` in `lib/sound-setting.ts`.
 
 ## Supabase
 
