@@ -58,3 +58,4 @@ Migrations are applied with the MCP `apply_migration` tool and mirrored in `supa
 - `create_scores` — `scores` table (one row per saved run, CHECK on name `^[A-Z0-9_]{1,10}$` and score `0..10000000`), RLS with public `select` and `insert` (no update/delete), and the `game_best_scores` view (`security_invoker`).
 - `replace_falldown_with_tetris` — swaps the FALLDOWN placeholder for the real Tetris row (`tetris`, same `sort_order` 2).
 - `replace_block_buster_with_arkanoid` — swaps the BLOCK BUSTER placeholder for the real Arkanoid row (`arkanoid`, same `sort_order` 1).
+- `replace_serpentine_with_snake` — swaps the SERPENTINE placeholder for the real Snake row (`snake`, same `sort_order` 3).
