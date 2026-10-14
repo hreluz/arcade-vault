@@ -1,5 +1,6 @@
 import { createArkanoid } from "@/lib/engines/arkanoid";
 import { createAsteroids } from "@/lib/engines/asteroids";
+import { createSnake } from "@/lib/engines/snake";
 import { createTetris } from "@/lib/engines/tetris";
 import type { EngineFactory } from "@/lib/engines/types";
 
@@ -12,5 +13,6 @@ export type EngineEntry = {
 export const ENGINES: Partial<Record<string, EngineEntry>> = {
   arkanoid: { factory: createArkanoid, controls: "← → / MOUSE MOVE · P PAUSE", sound: true },
   asteroids: { factory: createAsteroids, controls: "← → ROTATE · ↑ THRUST · SPACE FIRE · P PAUSE" },
+  snake: { factory: createSnake, controls: "← ↑ → ↓ / WASD STEER · P PAUSE" },
   tetris: { factory: createTetris, controls: "← → MOVE · ↑ ROTATE · ↓ SOFT DROP · SPACE DROP · P PAUSE" },
 };
