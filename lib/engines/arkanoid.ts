@@ -44,6 +44,13 @@ const MAX_DT = 50; // ms
 // ── Sprites (source rects verbatim from spritesheet.js) ───────────────────────
 const SPRITESHEET_SRC = "/games/arkanoid/spritesheet-breakout.png";
 
+// ── Sounds ────────────────────────────────────────────────────────────────────
+const BOUNCE_SRC = "/games/arkanoid/ball-bounce.mp3";
+const BREAK_SRC = "/games/arkanoid/break-sound.mp3";
+
+type SoundName = "bounce" | "break";
+const SOUND_SRCS: Readonly<Record<SoundName, string>> = { bounce: BOUNCE_SRC, break: BREAK_SRC };
+
 type Rect = { x: number; y: number; w: number; h: number };
 type SpriteRect = { sx: number; sy: number; sw: number; sh: number };
 
@@ -161,6 +168,25 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
   };
   sheet.src = SPRITESHEET_SRC;
 
+  // Sounds: the bytes are fetched now, but the AudioContext is only created
+  // inside a user gesture (start / resume / restart) to satisfy the autoplay
+  // policy. A missing or undecodable file leaves that sound silent.
+  let audio: AudioContext | null = null;
+  const bytes: Record<SoundName, ArrayBuffer | null> = { bounce: null, break: null };
+  const buffers: Record<SoundName, AudioBuffer | null> = { bounce: null, break: null };
+  let muted = false;
+  const fetches = new AbortController();
+  for (const name of Object.keys(SOUND_SRCS) as SoundName[]) {
+    fetch(SOUND_SRCS[name], { signal: fetches.signal })
+      .then((r) => (r.ok ? r.arrayBuffer() : null))
+      .then((data) => {
+        if (destroyed || !data) return;
+        bytes[name] = data;
+        decode(name);
+      })
+      .catch(() => {});
+  }
+
   // Game state
   let phase: EnginePhase = "ready";
   const paddle: Paddle = { x: (W - PADDLE_W) / 2, y: PADDLE_Y, w: PADDLE_W, h: PADDLE_H };
@@ -206,6 +232,50 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
     paddle.x = (W - PADDLE_W) / 2;
     loadLevel(1);
     clearKeys();
+  }
+
+  // Decodes a fetched sound once both the bytes and the context exist.
+  function decode(name: SoundName) {
+    const data = bytes[name];
+    if (!audio || !data) return;
+    bytes[name] = null; // decodeAudioData detaches the buffer
+    audio
+      .decodeAudioData(data)
+      .then((buffer) => {
+        if (!destroyed) buffers[name] = buffer;
+      })
+      .catch(() => {});
+  }
+
+  // Called from user gestures only: creates the context the first time and
+  // resumes it if the browser suspended it.
+  function ensureAudio() {
+    if (destroyed) return;
+    if (!audio) {
+      try {
+        audio = new AudioContext();
+      } catch {
+        return; // no Web Audio: the game stays silent
+      }
+      decode("bounce");
+      decode("break");
+    } else if (audio.state === "suspended") {
+      audio.resume().catch(() => {});
+    }
+  }
+
+  // One source per hit, so overlapping sounds are allowed as in the reference.
+  function play(name: SoundName) {
+    const buffer = buffers[name];
+    if (muted || !audio || !buffer) return;
+    const source = audio.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audio.destination);
+    source.start();
+  }
+
+  function setMuted(m: boolean) {
+    muted = m;
   }
 
   function aliveBlocks(): number {
@@ -260,14 +330,17 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
     if (ball.x <= 0) {
       ball.x = 0;
       ball.vx = Math.abs(ball.vx);
+      play("bounce");
     }
     if (ball.x + ball.w >= W) {
       ball.x = W - ball.w;
       ball.vx = -Math.abs(ball.vx);
+      play("bounce");
     }
     if (ball.y <= 0) {
       ball.y = 0;
       ball.vy = Math.abs(ball.vy);
+      play("bounce");
     }
 
     // Paddle bounce: the angle never changes
@@ -280,6 +353,7 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
     ) {
       ball.y = paddle.y - ball.h;
       ball.vy = -Math.abs(ball.vy);
+      play("bounce");
     }
 
     // Block collisions: one block per frame
@@ -289,6 +363,7 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
       explosions.push({ x: block.x, y: block.y, w: block.w, h: block.h, color: block.color, elapsed: 0 });
       score += BLOCK_POINTS;
       ball.vy = -ball.vy;
+      play("break");
       if (blocks.every((b) => !b.alive)) {
         if (level < LEVELS.length) {
           loadLevel(level + 1);
@@ -331,6 +406,7 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
   // ── Phase transitions ──
   function start() {
     if (phase !== "ready") return;
+    ensureAudio();
     initRun();
     phase = "playing";
     lastTime = null;
@@ -346,6 +422,7 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
 
   function resume() {
     if (phase !== "paused") return;
+    ensureAudio();
     phase = "playing";
     lastTime = null;
     emit();
@@ -358,6 +435,7 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
   }
 
   function restart() {
+    ensureAudio();
     initRun();
     phase = "playing";
     lastTime = null;
@@ -414,6 +492,8 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
     destroyed = true;
     cancelAnimationFrame(rafId);
     sheet.onload = null;
+    fetches.abort();
+    audio?.close().catch(() => {});
     window.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("keyup", onKeyUp);
     window.removeEventListener("blur", pause);
@@ -426,5 +506,5 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
   emit();
   rafId = requestAnimationFrame(frame);
 
-  return { start, pause, resume, end, restart, destroy };
+  return { start, pause, resume, end, restart, destroy, setMuted };
 };

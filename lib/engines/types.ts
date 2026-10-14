@@ -21,6 +21,7 @@ export interface GameEngine {
   end(): void; // ready | playing | paused → over
   restart(): void; // any → playing, with a fresh run (skips the ready screen)
   destroy(): void; // cancels rAF and removes every listener; idempotent
+  setMuted?(muted: boolean): void; // only engines with sound implement it
 }
 
 export type EngineFactory = (canvas: HTMLCanvasElement, cb: EngineCallbacks) => GameEngine;

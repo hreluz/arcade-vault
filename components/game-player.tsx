@@ -7,6 +7,7 @@ import GameCanvas, { type GameCanvasHandle } from "@/components/game-canvas";
 import { ENGINES } from "@/lib/engines";
 import type { EngineSnapshot } from "@/lib/engines/types";
 import type { Game } from "@/lib/games";
+import { useSoundSetting } from "@/lib/sound-setting";
 
 type Run = { score: number; level: number };
 const NEW_RUN: Run = { score: 0, level: 1 };
@@ -36,6 +37,7 @@ export default function GamePlayer({ game }: { game: Game }) {
   const [name, setName] = useState("GUEST");
   const [save, setSave] = useState<SaveState>(IDLE);
   const [saving, startSaving] = useTransition();
+  const [soundOn, setSoundOn] = useSoundSetting();
 
   // Simulated play (games without a real engine): the score ticks up and the
   // level bumps every ~2,500 points.
@@ -77,6 +79,11 @@ export default function GamePlayer({ game }: { game: Game }) {
     } else {
       setPaused((p) => !p);
     }
+    releaseFocus(e);
+  };
+
+  const toggleSound = (e: MouseEvent<HTMLButtonElement>) => {
+    setSoundOn(!soundOn);
     releaseFocus(e);
   };
 
@@ -148,6 +155,11 @@ export default function GamePlayer({ game }: { game: Game }) {
           ))}
         </div>
         <div className="hud-actions">
+          {entry?.sound && (
+            <button type="button" className="btn ghost" aria-pressed={soundOn} onClick={toggleSound}>
+              {soundOn ? "SOUND ON" : "SOUND OFF"}
+            </button>
+          )}
           <button type="button" className="btn yellow" onClick={togglePause}>
             {view.paused ? "RESUME" : "PAUSE"}
           </button>
@@ -163,7 +175,7 @@ export default function GamePlayer({ game }: { game: Game }) {
       <div className="crt">
         <div className="crt-screen">
           {entry ? (
-            <GameCanvas factory={entry.factory} onChange={setSnapshot} ref={engineRef} />
+            <GameCanvas factory={entry.factory} onChange={setSnapshot} muted={!soundOn} ref={engineRef} />
           ) : (
             <div className="game-arena" aria-hidden="true">
               <div className="grid-floor" />
