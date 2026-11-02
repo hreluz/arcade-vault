@@ -11,7 +11,7 @@ Arcade Vault is a platform for playing retro arcade games online and competing f
 Routes (`app/`):
 
 - `/` home, `/games` library (search + category filter in `components/library-browser.tsx`), `/games/[id]` game detail with its leaderboard, `/games/[id]/play` the player, `/hall-of-fame` top scores per game.
--  Games like `arkanoid`, `asteroids` , `snake`, `tetris` and more  ... (see `references/implemented-games.md`)
+- Games like `arkanoid`, `asteroids` , `snake`, `tetris` and more ... (see `references/implemented-games.md`)
 - `/about` with a contact form, `/login` sign-in / sign-up form (visual only; no auth yet, it just routes to `/games`).
 - `app/error.tsx` and `app/not-found.tsx` handle errors and unknown ids.
 
@@ -23,6 +23,7 @@ Development is spec-driven. Write or update a spec before implementing a feature
 
 - `/spec` writes a spec in `specs/NN-slug.md` (template in `.agents/skills/spec/template.md`); `/spec-impl` implements an approved spec and creates the `spec-NN-slug` branch automatically (`specs/.spec-config.yml`, `AutoCreateBranch: true`). Both come from [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`), installed in `.agents/skills/` and symlinked into `.claude/skills/`.
 - `/new-game <folder>` (project skill, `.claude/skills/new-game/`) turns a game from `references/started-games/` into a spec that ports it to a typed engine, adds its catalog row (replacing a placeholder) and wires it to the leaderboards. It only writes the spec; run `/spec-impl` after. `integration.md` there is the per-game integration checklist.
+- `mobile-porter` (project subagent, `.claude/agents/mobile-porter.md`) reviews the layout on touch phones and desktop web against the SPEC 11 touch controls and fixes layout defects. It does not commit.
 - Always use `/frontend-design` to design the user interface.
 - Save Playwright screenshots to `.playwright-screenshots/` (git-ignored).
 
