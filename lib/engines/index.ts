@@ -11,8 +11,8 @@ export type EngineEntry = {
   sound?: true; // the player shows the SOUND button
 };
 
-const LEFT: PadButton = { slot: "left", code: "ArrowLeft", label: "◀", ariaLabel: "Move left" };
-const RIGHT: PadButton = { slot: "right", code: "ArrowRight", label: "▶", ariaLabel: "Move right" };
+const LEFT: PadButton = { slot: "left", code: "ArrowLeft", ariaLabel: "Move left" };
+const RIGHT: PadButton = { slot: "right", code: "ArrowRight", ariaLabel: "Move right" };
 
 export const ENGINES: Partial<Record<string, EngineEntry>> = {
   arkanoid: {
@@ -27,16 +27,16 @@ export const ENGINES: Partial<Record<string, EngineEntry>> = {
     pad: [
       { ...LEFT, ariaLabel: "Rotate left" },
       { ...RIGHT, ariaLabel: "Rotate right" },
-      { slot: "a", code: "ArrowUp", label: "THRUST", ariaLabel: "Thrust" },
-      { slot: "b", code: "Space", label: "FIRE", ariaLabel: "Fire" },
+      { slot: "a", code: "ArrowUp", caption: "THRUST", ariaLabel: "Thrust" },
+      { slot: "b", code: "Space", caption: "FIRE", ariaLabel: "Fire" },
     ],
   },
   snake: {
     factory: createSnake,
     controls: "← ↑ → ↓ / WASD STEER · P PAUSE",
     pad: [
-      { slot: "up", code: "ArrowUp", label: "▲", ariaLabel: "Steer up" },
-      { slot: "down", code: "ArrowDown", label: "▼", ariaLabel: "Steer down" },
+      { slot: "up", code: "ArrowUp", ariaLabel: "Steer up" },
+      { slot: "down", code: "ArrowDown", ariaLabel: "Steer down" },
       { ...LEFT, ariaLabel: "Steer left" },
       { ...RIGHT, ariaLabel: "Steer right" },
     ],
@@ -47,9 +47,9 @@ export const ENGINES: Partial<Record<string, EngineEntry>> = {
     pad: [
       { ...LEFT, repeat: true },
       { ...RIGHT, repeat: true },
-      { slot: "down", code: "ArrowDown", label: "▼", ariaLabel: "Soft drop", repeat: true },
-      { slot: "a", code: "ArrowUp", label: "ROTATE", ariaLabel: "Rotate" },
-      { slot: "b", code: "Space", label: "DROP", ariaLabel: "Hard drop" },
+      { slot: "down", code: "ArrowDown", ariaLabel: "Soft drop", repeat: true },
+      { slot: "a", code: "ArrowUp", caption: "ROTATE", ariaLabel: "Rotate" },
+      { slot: "b", code: "Space", caption: "DROP", ariaLabel: "Hard drop" },
     ],
   },
 };

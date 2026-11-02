@@ -18,8 +18,8 @@ export type PadSlot = "up" | "down" | "left" | "right" | "a" | "b";
 export type PadButton = {
   slot: PadSlot; // where it sits: D-pad (up/down/left/right) or action (a/b)
   code: PadCode; // what press() receives
-  label: string; // visible text, e.g. "◀", "ROTATE", "FIRE"
   ariaLabel: string; // accessible name of the action, e.g. "Move left"
+  caption?: string; // action shown next to A / B, e.g. "ROTATE"; D-pad buttons have none
   repeat?: true; // while held, re-send press(code, true) after 170 ms, then every 50 ms
 };
 

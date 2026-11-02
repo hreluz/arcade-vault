@@ -14,6 +14,12 @@ const REPEAT_EVERY = 50;
 
 const DPAD_SLOTS: PadSlot[] = ["up", "left", "right", "down"];
 const ACTION_SLOTS: PadSlot[] = ["a", "b"];
+const ARROWS: Partial<Record<PadSlot, string>> = {
+  up: "M12 4 L20 16 L4 16 Z",
+  right: "M8 4 L20 12 L8 20 Z",
+  down: "M4 8 L20 8 L12 20 Z",
+  left: "M16 4 L16 20 L4 12 Z",
+};
 
 // The finger holding a button and its pending repeat, if any.
 type Hold = { pointerId: number; code: PadCode; timer: ReturnType<typeof setTimeout> | null };
@@ -87,8 +93,29 @@ export default function TouchPad({ buttons, onPress }: Props) {
 
   const renderSlot = (slot: PadSlot) => {
     const button = buttons.find((b) => b.slot === slot);
-    // An empty slot renders nothing; the grid keeps its place.
-    if (!button) return null;
+    const arrow = ARROWS[slot];
+    const face = arrow ? (
+      <svg className="pad-arrow" viewBox="0 0 24 24" aria-hidden="true">
+        <path d={arrow} fill="currentColor" />
+      </svg>
+    ) : (
+      <span className="pad-letter">{slot.toUpperCase()}</span>
+    );
+    // A slot the game doesn't use stays visible as a dimmed, inert button.
+    if (!button) {
+      return (
+        <button
+          key={slot}
+          type="button"
+          className={`pad-btn pad-${slot}`}
+          disabled
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          {face}
+        </button>
+      );
+    }
     return (
       <button
         key={slot}
@@ -101,7 +128,8 @@ export default function TouchPad({ buttons, onPress }: Props) {
         onPointerCancel={up(slot)}
         onLostPointerCapture={up(slot)}
       >
-        {button.label}
+        {face}
+        {button.caption && <span className="pad-caption">{button.caption}</span>}
       </button>
     );
   };
@@ -113,7 +141,12 @@ export default function TouchPad({ buttons, onPress }: Props) {
       aria-label="Touch controls"
       onContextMenu={(e) => e.preventDefault()}
     >
-      <div className="pad-dpad">{DPAD_SLOTS.map(renderSlot)}</div>
+      <div className="pad-dpad">
+        {DPAD_SLOTS.map(renderSlot)}
+        <div className="pad-hub" aria-hidden="true">
+          <span className="pad-hub-gem" />
+        </div>
+      </div>
       <div className="pad-actions">{ACTION_SLOTS.map(renderSlot)}</div>
     </div>
   );

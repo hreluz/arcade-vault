@@ -1299,17 +1299,46 @@
   .crt-bottom .crt-legend {
     text-align: right;
   }
-  /* touch pad: a cabinet control panel under the CRT, only on touch-primary
-     devices. Quiet cyan D-pad on the left, two lit arcade buttons on the right. */
+  /* Gamepad MK-II: one controller shell under the CRT, only on touch-primary
+     devices. Beveled D-pad on the left, staggered glossy A / B on the right. */
   .touch-pad {
+    position: relative;
     display: none;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr;
+    column-gap: 8px;
     align-items: center;
     margin-top: 12px;
-    padding: 0 4px;
+    padding: 10px 12px;
+    background: linear-gradient(180deg, #1c1c28 0%, #0c0c14 100%);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow:
+      0 30px 80px -30px rgba(0, 245, 255, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.02),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.6);
+  }
+  .touch-pad::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border: 1px solid rgba(0, 245, 255, 0.14);
+    border-radius: 12px;
+    pointer-events: none;
+  }
+  .touch-pad::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 8px 8px;
+    border-radius: inherit;
+    opacity: 0.6;
+    pointer-events: none;
   }
   .pad-dpad {
-    grid-column: 1;
+    position: relative;
+    z-index: 1;
     display: grid;
     grid-template-columns: repeat(3, 64px);
     grid-template-rows: repeat(3, 64px);
@@ -1319,11 +1348,14 @@
       ". down .";
     gap: 6px;
   }
+  /* The rows alone keep A and B apart; the side stagger shrinks with the screen. */
   .pad-actions {
-    grid-column: 3;
+    position: relative;
+    z-index: 1;
     display: grid;
-    gap: 14px;
-    justify-items: end;
+    grid-template-rows: 72px 72px;
+    row-gap: 4px;
+    padding-block: 12px;
   }
   .pad-up {
     grid-area: up;
@@ -1337,73 +1369,169 @@
   .pad-down {
     grid-area: down;
   }
+  .pad-hub {
+    grid-area: 2 / 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 50%, #181822 0%, #08080d 80%);
+    border: 1px solid rgba(0, 245, 255, 0.15);
+    border-radius: 6px;
+    box-shadow:
+      inset 0 0 12px rgba(0, 0, 0, 0.8),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  .pad-hub-gem {
+    width: 12px;
+    height: 12px;
+    background: var(--cyan);
+    box-shadow:
+      0 0 10px var(--cyan),
+      inset 0 0 4px rgba(0, 0, 0, 0.5);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    animation: pad-gem-pulse 2s ease-in-out infinite;
+  }
+  @keyframes pad-gem-pulse {
+    50% {
+      opacity: 0.35;
+      transform: scale(0.85);
+    }
+  }
+  .pad-arrow {
+    width: 22px;
+    height: 22px;
+    transition: filter 140ms;
+  }
   .pad-btn {
-    --pad-c: var(--cyan);
-    --pad-rgb: 0, 245, 255;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 64px;
     height: 64px;
     padding: 0;
-    font-family: var(--pixel);
-    font-size: 22px;
-    line-height: 1;
-    color: var(--pad-c);
-    background: rgba(var(--pad-rgb), 0.04);
-    border: 1px solid var(--pad-c);
-    box-shadow: inset 0 0 0 3px rgba(var(--pad-rgb), 0.08);
-    text-shadow: 0 0 6px rgba(var(--pad-rgb), 0.6);
-    clip-path: polygon(
-      10px 0,
-      100% 0,
-      100% calc(100% - 10px),
-      calc(100% - 10px) 100%,
-      0 100%,
-      0 10px
-    );
+    color: var(--ink-dim);
+    background: linear-gradient(180deg, #1a1a25, #0a0a12);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    box-shadow:
+      0 4px 0 #050507,
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.6);
     transition:
-      transform 60ms ease,
-      background-color 60ms ease,
-      box-shadow 60ms ease;
+      transform 80ms,
+      box-shadow 140ms,
+      color 140ms,
+      border-color 140ms,
+      background 140ms;
   }
-  /* arcade buttons: round, with the bezel ring of a real cabinet button */
+  .pad-btn[data-pressed] {
+    transform: translateY(3px);
+    color: var(--cyan);
+    background: linear-gradient(180deg, #08161e, #030a0e);
+    border-color: var(--cyan);
+    box-shadow:
+      0 1px 0 #050507,
+      inset 0 0 16px rgba(0, 245, 255, 0.45),
+      0 0 16px rgba(0, 245, 255, 0.5);
+  }
+  .pad-btn[data-pressed] .pad-arrow {
+    filter: drop-shadow(0 0 6px var(--cyan)) drop-shadow(0 0 12px var(--cyan));
+  }
+  /* glossy arcade buttons: A high on the right, B low on the left */
   .pad-a,
   .pad-b {
     width: 72px;
     height: 72px;
-    font-size: 9px;
-    letter-spacing: 0.08em;
+    color: var(--pad-c);
+    background:
+      radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.25), transparent 50%),
+      radial-gradient(circle at 50% 55%, var(--pad-mid), var(--pad-deep) 75%);
+    border: 2px solid currentColor;
     border-radius: 50%;
-    clip-path: none;
-    border-width: 2px;
     box-shadow:
-      0 0 0 4px #1b1b22,
-      0 0 0 5px rgba(var(--pad-rgb), 0.35),
-      inset 0 -6px 12px rgba(0, 0, 0, 0.5);
+      0 6px 0 #050507,
+      0 0 22px var(--pad-glow),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      inset 0 -4px 8px rgba(0, 0, 0, 0.4);
   }
   .pad-a {
     --pad-c: var(--magenta);
-    --pad-rgb: 255, 0, 110;
+    --pad-mid: rgba(255, 0, 110, 0.7);
+    --pad-deep: rgba(110, 0, 40, 0.95);
+    --pad-glow: rgba(255, 0, 110, 0.4);
+    justify-self: end;
   }
   .pad-b {
-    --pad-c: var(--yellow);
-    --pad-rgb: 245, 255, 0;
+    --pad-c: var(--cyan);
+    --pad-mid: rgba(0, 200, 230, 0.7);
+    --pad-deep: rgba(0, 50, 70, 0.95);
+    --pad-glow: rgba(0, 245, 255, 0.4);
+    justify-self: start;
   }
-  .pad-btn[data-pressed] {
-    background: rgba(var(--pad-rgb), 0.2);
-    box-shadow:
-      0 0 18px rgba(var(--pad-rgb), 0.55),
-      inset 0 0 14px rgba(var(--pad-rgb), 0.45);
-    transform: scale(0.94);
+  .pad-letter {
+    font-family: var(--pixel);
+    font-size: 22px;
+    line-height: 1;
+    color: #fff;
+    text-shadow:
+      0 0 8px var(--pad-c),
+      0 0 18px var(--pad-c),
+      0 1px 0 rgba(0, 0, 0, 0.6);
+  }
+  /* decorative only: neither the caption nor the ring widens the tap target */
+  .pad-caption {
+    position: absolute;
+    left: 50%;
+    font-family: var(--pixel);
+    font-size: 7px;
+    line-height: 1;
+    color: var(--pad-c);
+    white-space: nowrap;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .pad-a .pad-caption {
+    bottom: calc(100% + 4px);
+  }
+  .pad-b .pad-caption {
+    top: calc(100% + 6px);
+  }
+  .pad-a::before,
+  .pad-b::before {
+    content: "";
+    position: absolute;
+    inset: -3px; /* tighter than the reference, so it clears the caption and the other button */
+    border: 1px dashed currentColor;
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 140ms;
   }
   .pad-a[data-pressed],
   .pad-b[data-pressed] {
+    color: var(--pad-c);
+    background:
+      radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.25), transparent 50%),
+      radial-gradient(circle at 50% 55%, var(--pad-mid), var(--pad-deep) 75%);
+    border-color: currentColor;
+    transform: translateY(4px) scale(0.97);
     box-shadow:
-      0 0 0 4px #1b1b22,
-      0 0 0 5px var(--pad-c),
-      0 0 22px rgba(var(--pad-rgb), 0.6),
-      inset 0 0 16px rgba(var(--pad-rgb), 0.5);
+      0 1px 0 #050507,
+      0 0 36px var(--pad-glow),
+      inset 0 0 18px rgba(0, 0, 0, 0.5);
+  }
+  .pad-a[data-pressed]::before,
+  .pad-b[data-pressed]::before {
+    opacity: 1;
+  }
+  /* a slot this game doesn't use */
+  .pad-btn:disabled {
+    opacity: 0.35;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  .pad-btn:disabled .pad-letter {
+    text-shadow: none;
   }
 
   /* touch surfaces: no scroll, zoom, selection, callout or tap flash */
@@ -1474,8 +1602,22 @@
     }
   }
 
+  /* narrow phones: same tap sizes, A / B end up almost stacked */
+  @media (max-width: 359px) {
+    .touch-pad {
+      column-gap: 2px;
+      padding-inline: 6px;
+    }
+    .pad-dpad {
+      gap: 4px;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .ready-prompt {
+      animation: none;
+    }
+    .pad-hub-gem {
       animation: none;
     }
     .pad-btn[data-pressed] {
