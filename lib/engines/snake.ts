@@ -2,7 +2,13 @@
 // references/source-assets/snake-assets/. Helpers are pure and take what they
 // need; every piece of mutable game state lives in the createSnake closure.
 
-import { sameExtras, type EngineFactory, type EnginePhase, type EngineSnapshot } from "@/lib/engines/types";
+import {
+  sameExtras,
+  type EngineFactory,
+  type EnginePhase,
+  type EngineSnapshot,
+  type PadCode,
+} from "@/lib/engines/types";
 
 // ── Canvas ────────────────────────────────────────────────────────────────────
 const W = 800;
@@ -428,27 +434,37 @@ export const createSnake: EngineFactory = (canvas, cb) => {
   }
 
   // ── Input listeners ──
-  function onKeyDown(e: KeyboardEvent) {
-    if (isEditable(e.target)) return;
-    if (phase !== "over" && GAME_KEYS.has(e.code)) e.preventDefault();
-
-    const isPauseKey = e.code === "KeyP" || e.code === "Escape";
+  // Shared by the keyboard listener and press() (touch pad).
+  function handleKeyDown(code: string, repeat: boolean) {
+    const isPauseKey = code === "KeyP" || code === "Escape";
     switch (phase) {
       case "ready":
-        if (e.code === "Space" && !e.repeat) start();
+        if (code === "Space" && !repeat) start();
         break;
       case "playing": {
-        const next = KEY_DIRS[e.code];
+        const next = KEY_DIRS[code];
         if (next) enqueue(next);
-        else if (isPauseKey && !e.repeat) pause();
+        else if (isPauseKey && !repeat) pause();
         break;
       }
       case "paused":
-        if (isPauseKey && !e.repeat) resume();
+        if (isPauseKey && !repeat) resume();
         break;
       case "over":
         break;
     }
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (isEditable(e.target)) return;
+    if (phase !== "over" && GAME_KEYS.has(e.code)) e.preventDefault();
+    handleKeyDown(e.code, e.repeat);
+  }
+
+  // Snake acts on key down only, so a pad release has nothing to undo.
+  function press(code: PadCode, down: boolean) {
+    if (destroyed || !down) return;
+    handleKeyDown(code, false);
   }
 
   function onVisibilityChange() {
@@ -474,5 +490,5 @@ export const createSnake: EngineFactory = (canvas, cb) => {
   emit();
   rafId = requestAnimationFrame(frame);
 
-  return { start, pause, resume, end, restart, destroy };
+  return { start, pause, resume, end, restart, destroy, press };
 };

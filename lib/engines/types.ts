@@ -10,6 +10,19 @@ export type EngineSnapshot = {
   extras: HudStat[]; // game-specific HUD stats, in display order; [] when none
 };
 
+// Keyboard codes the touch pad can send; each engine already handles these keys.
+export type PadCode = "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight" | "Space";
+
+export type PadSlot = "up" | "down" | "left" | "right" | "a" | "b";
+
+export type PadButton = {
+  slot: PadSlot; // where it sits: D-pad (up/down/left/right) or action (a/b)
+  code: PadCode; // what press() receives
+  label: string; // visible text, e.g. "◀", "ROTATE", "FIRE"
+  ariaLabel: string; // accessible name of the action, e.g. "Move left"
+  repeat?: true; // while held, re-send press(code, true) after 170 ms, then every 50 ms
+};
+
 export type EngineCallbacks = {
   onChange: (s: EngineSnapshot) => void; // only when a field actually changed, never every frame
 };
@@ -21,6 +34,7 @@ export interface GameEngine {
   end(): void; // ready | playing | paused → over
   restart(): void; // any → playing, with a fresh run (skips the ready screen)
   destroy(): void; // cancels rAF and removes every listener; idempotent
+  press(code: PadCode, down: boolean): void; // on-screen input; same effect as the key going down / up
   setMuted?(muted: boolean): void; // only engines with sound implement it
 }
 

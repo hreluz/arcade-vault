@@ -3,7 +3,13 @@
 // piece of mutable game state lives in the createArkanoid closure.
 
 import { LEVELS, type BlockColor } from "@/lib/engines/arkanoid-levels";
-import { sameExtras, type EngineFactory, type EnginePhase, type EngineSnapshot } from "@/lib/engines/types";
+import {
+  sameExtras,
+  type EngineFactory,
+  type EnginePhase,
+  type EngineSnapshot,
+  type PadCode,
+} from "@/lib/engines/types";
 
 // ── Canvas ────────────────────────────────────────────────────────────────────
 const W = 800;
@@ -360,7 +366,14 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
     for (const block of blocks) {
       if (!block.alive || !collideAABB(ball, block)) continue;
       block.alive = false;
-      explosions.push({ x: block.x, y: block.y, w: block.w, h: block.h, color: block.color, elapsed: 0 });
+      explosions.push({
+        x: block.x,
+        y: block.y,
+        w: block.w,
+        h: block.h,
+        color: block.color,
+        elapsed: 0,
+      });
       score += BLOCK_POINTS;
       ball.vy = -ball.vy;
       play("break");
@@ -443,33 +456,48 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
   }
 
   // ── Input listeners ──
-  function onKeyDown(e: KeyboardEvent) {
-    if (isEditable(e.target)) return;
-    if (phase !== "over" && GAME_KEYS.has(e.code)) e.preventDefault();
-
-    const isPauseKey = e.code === "KeyP" || e.code === "Escape";
+  // Shared by the keyboard listeners and press() (touch pad).
+  function handleKeyDown(code: string, repeat: boolean) {
+    const isPauseKey = code === "KeyP" || code === "Escape";
     switch (phase) {
       case "ready":
-        if (e.code === "Space" && !e.repeat) start();
+        if (code === "Space" && !repeat) start();
         break;
       case "playing":
-        if (e.code === "ArrowLeft" || e.code === "ArrowRight") keys[e.code] = true;
-        else if (isPauseKey && !e.repeat) pause();
+        if (code === "ArrowLeft" || code === "ArrowRight") keys[code] = true;
+        else if (isPauseKey && !repeat) pause();
         break;
       case "paused":
-        if (isPauseKey && !e.repeat) resume();
+        if (isPauseKey && !repeat) resume();
         break;
       case "over":
         break;
     }
   }
 
-  function onKeyUp(e: KeyboardEvent) {
-    if (e.code === "ArrowLeft" || e.code === "ArrowRight") keys[e.code] = false;
+  function handleKeyUp(code: string) {
+    if (code === "ArrowLeft" || code === "ArrowRight") keys[code] = false;
   }
 
-  // Centres the paddle under the pointer, mapped to logical coordinates.
-  function onMouseMove(e: MouseEvent) {
+  function onKeyDown(e: KeyboardEvent) {
+    if (isEditable(e.target)) return;
+    if (phase !== "over" && GAME_KEYS.has(e.code)) e.preventDefault();
+    handleKeyDown(e.code, e.repeat);
+  }
+
+  function onKeyUp(e: KeyboardEvent) {
+    handleKeyUp(e.code);
+  }
+
+  function press(code: PadCode, down: boolean) {
+    if (destroyed) return;
+    if (down) handleKeyDown(code, false);
+    else handleKeyUp(code);
+  }
+
+  // Centres the paddle under the pointer (mouse, touch or pen), mapped to logical
+  // coordinates. pointerdown also fires it, so a tap moves the paddle at once.
+  function onPointerMove(e: PointerEvent) {
     if (phase !== "playing") return;
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0) return;
@@ -485,7 +513,8 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
   window.addEventListener("keyup", onKeyUp);
   window.addEventListener("blur", pause);
   document.addEventListener("visibilitychange", onVisibilityChange);
-  canvas.addEventListener("mousemove", onMouseMove);
+  canvas.addEventListener("pointermove", onPointerMove);
+  canvas.addEventListener("pointerdown", onPointerMove);
 
   function destroy() {
     if (destroyed) return;
@@ -498,7 +527,8 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
     window.removeEventListener("keyup", onKeyUp);
     window.removeEventListener("blur", pause);
     document.removeEventListener("visibilitychange", onVisibilityChange);
-    canvas.removeEventListener("mousemove", onMouseMove);
+    canvas.removeEventListener("pointermove", onPointerMove);
+    canvas.removeEventListener("pointerdown", onPointerMove);
   }
 
   // Ready screen: level 1 with the ball resting on the centred paddle.
@@ -506,5 +536,5 @@ export const createArkanoid: EngineFactory = (canvas, cb) => {
   emit();
   rafId = requestAnimationFrame(frame);
 
-  return { start, pause, resume, end, restart, destroy, setMuted };
+  return { start, pause, resume, end, restart, destroy, press, setMuted };
 };

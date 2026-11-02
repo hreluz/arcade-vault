@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition, type CSSProperties, type MouseEvent } from "react";
 import { saveScore, type SaveScoreResult } from "@/app/games/[id]/play/actions";
 import GameCanvas, { type GameCanvasHandle } from "@/components/game-canvas";
+import TouchPad from "@/components/touch-pad";
 import { ENGINES } from "@/lib/engines";
 import type { EngineSnapshot } from "@/lib/engines/types";
 import type { Game } from "@/lib/games";
@@ -107,6 +108,12 @@ export default function GamePlayer({ game }: { game: Game }) {
     setSave(IDLE);
   };
 
+  // Touch devices start from the ready overlay; on desktop a click does nothing
+  // (Space starts). The tap is a user gesture, so engine audio can unlock in it.
+  const startByTap = () => {
+    if (window.matchMedia("(pointer: coarse)").matches) engineRef.current?.start();
+  };
+
   const submitScore = () => {
     startSaving(async () => {
       try {
@@ -186,12 +193,12 @@ export default function GamePlayer({ game }: { game: Game }) {
             </div>
           )}
           {factory && phase === "ready" && (
-            <div className="crt-content ready-overlay z-5">
+            <div className="crt-content ready-overlay z-5" onClick={startByTap}>
               <div className="ready-keys">
                 <div className="ready-prompt pixel neon-cyan">PRESS SPACE TO START</div>
                 <div className="ready-controls mono">{entry?.controls}</div>
               </div>
-              <div className="ready-touch pixel neon-magenta">KEYBOARD REQUIRED</div>
+              <div className="ready-prompt ready-touch pixel neon-cyan">TAP TO START</div>
             </div>
           )}
           {view.paused && (
@@ -211,6 +218,8 @@ export default function GamePlayer({ game }: { game: Game }) {
           {entry ? <span className="crt-legend">{entry.controls}</span> : <span>LOAD · 1MB</span>}
         </div>
       </div>
+
+      {entry && <TouchPad buttons={entry.pad} onPress={(code, down) => engineRef.current?.press(code, down)} />}
 
       {view.over && (
         <div className="modal-bd">

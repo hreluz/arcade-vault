@@ -2,7 +2,13 @@
 // Helpers are pure and take the board / piece they need; every piece of mutable
 // game state lives in the createTetris closure.
 
-import { sameExtras, type EngineFactory, type EnginePhase, type EngineSnapshot } from "@/lib/engines/types";
+import {
+  sameExtras,
+  type EngineFactory,
+  type EnginePhase,
+  type EngineSnapshot,
+  type PadCode,
+} from "@/lib/engines/types";
 
 // ── Canvas ────────────────────────────────────────────────────────────────────
 const W = 800;
@@ -470,26 +476,24 @@ export const createTetris: EngineFactory = (canvas, cb) => {
 
   // ── Input listeners ──
   // Each keydown (including OS key-repeat) is one action, as in the reference.
-  function onKeyDown(e: KeyboardEvent) {
-    if (isEditable(e.target)) return;
-    if (phase !== "over" && GAME_KEYS.has(e.code)) e.preventDefault();
-
-    const isPauseKey = e.code === "KeyP" || e.code === "Escape";
+  // Shared by the keyboard listeners and press() (touch pad).
+  function handleKeyDown(code: string, repeat: boolean) {
+    const isPauseKey = code === "KeyP" || code === "Escape";
     switch (phase) {
       case "ready":
-        if (e.code === "Space" && !e.repeat) {
+        if (code === "Space" && !repeat) {
           startSpaceHeld = true;
           start();
         }
         break;
       case "playing": {
         if (isPauseKey) {
-          if (!e.repeat) pause();
+          if (!repeat) pause();
           break;
         }
         const piece = current;
         if (!piece) break;
-        switch (e.code) {
+        switch (code) {
           case "ArrowLeft":
             if (!collide(board, piece.shape, piece.x - 1, piece.y)) piece.x--;
             break;
@@ -511,15 +515,31 @@ export const createTetris: EngineFactory = (canvas, cb) => {
         break;
       }
       case "paused":
-        if (isPauseKey && !e.repeat) resume();
+        if (isPauseKey && !repeat) resume();
         break;
       case "over":
         break;
     }
   }
 
+  function handleKeyUp(code: string) {
+    if (code === "Space") startSpaceHeld = false;
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (isEditable(e.target)) return;
+    if (phase !== "over" && GAME_KEYS.has(e.code)) e.preventDefault();
+    handleKeyDown(e.code, e.repeat);
+  }
+
   function onKeyUp(e: KeyboardEvent) {
-    if (e.code === "Space") startSpaceHeld = false;
+    handleKeyUp(e.code);
+  }
+
+  function press(code: PadCode, down: boolean) {
+    if (destroyed) return;
+    if (down) handleKeyDown(code, false);
+    else handleKeyUp(code);
   }
 
   function onVisibilityChange() {
@@ -544,5 +564,5 @@ export const createTetris: EngineFactory = (canvas, cb) => {
   emit();
   rafId = requestAnimationFrame(frame);
 
-  return { start, pause, resume, end, restart, destroy };
+  return { start, pause, resume, end, restart, destroy, press };
 };
