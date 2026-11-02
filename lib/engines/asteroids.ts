@@ -2,7 +2,13 @@
 // Classes are stateless definitions; every piece of mutable game state lives in
 // the createAsteroids closure.
 
-import { sameExtras, type EngineFactory, type EnginePhase, type EngineSnapshot } from "@/lib/engines/types";
+import {
+  sameExtras,
+  type EngineFactory,
+  type EnginePhase,
+  type EngineSnapshot,
+  type PadCode,
+} from "@/lib/engines/types";
 
 // ── Canvas ────────────────────────────────────────────────────────────────────
 const W = 800;
@@ -465,7 +471,8 @@ export const createAsteroids: EngineFactory = (canvas, cb) => {
       score,
       level,
       lives,
-      extras: tripleShot > 0 ? [{ key: "triple", label: "3X", value: `${tripleShot.toFixed(1)}s` }] : [],
+      extras:
+        tripleShot > 0 ? [{ key: "triple", label: "3X", value: `${tripleShot.toFixed(1)}s` }] : [],
     };
   }
 
@@ -635,34 +642,48 @@ export const createAsteroids: EngineFactory = (canvas, cb) => {
   }
 
   // ── Input listeners ──
-  function onKeyDown(e: KeyboardEvent) {
-    if (isEditable(e.target)) return;
-    if (phase !== "over" && GAME_KEYS.has(e.code)) e.preventDefault();
-
-    const isPauseKey = e.code === "KeyP" || e.code === "Escape";
+  // Shared by the keyboard listeners and press() (touch pad).
+  function handleKeyDown(code: string, repeat: boolean) {
+    const isPauseKey = code === "KeyP" || code === "Escape";
     switch (phase) {
       case "ready":
-        if (e.code === "Space" && !e.repeat) start();
+        if (code === "Space" && !repeat) start();
         break;
       case "playing":
         if (isPauseKey) {
-          if (!e.repeat) pause();
+          if (!repeat) pause();
           break;
         }
-        if (!keys[e.code]) justPressed[e.code] = true;
-        keys[e.code] = true;
+        if (!keys[code]) justPressed[code] = true;
+        keys[code] = true;
         break;
       case "paused":
-        if (isPauseKey && !e.repeat) resume();
+        if (isPauseKey && !repeat) resume();
         break;
       case "over":
         break;
     }
   }
 
+  function handleKeyUp(code: string) {
+    keys[code] = false;
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (isEditable(e.target)) return;
+    if (phase !== "over" && GAME_KEYS.has(e.code)) e.preventDefault();
+    handleKeyDown(e.code, e.repeat);
+  }
+
   function onKeyUp(e: KeyboardEvent) {
     if (isEditable(e.target)) return;
-    keys[e.code] = false;
+    handleKeyUp(e.code);
+  }
+
+  function press(code: PadCode, down: boolean) {
+    if (destroyed) return;
+    if (down) handleKeyDown(code, false);
+    else handleKeyUp(code);
   }
 
   function onVisibilityChange() {
@@ -688,5 +709,5 @@ export const createAsteroids: EngineFactory = (canvas, cb) => {
   emit();
   rafId = requestAnimationFrame(frame);
 
-  return { start, pause, resume, end, restart, destroy };
+  return { start, pause, resume, end, restart, destroy, press };
 };

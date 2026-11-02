@@ -3,7 +3,7 @@
 import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
 import type { EngineFactory, EngineSnapshot, GameEngine } from "@/lib/engines/types";
 
-export type GameCanvasHandle = Pick<GameEngine, "pause" | "resume" | "end" | "restart">;
+export type GameCanvasHandle = Pick<GameEngine, "start" | "pause" | "resume" | "end" | "restart" | "press">;
 
 type Props = {
   factory: EngineFactory;
@@ -47,10 +47,12 @@ export default function GameCanvas({ factory, onChange, muted, ref }: Props) {
   useImperativeHandle(
     ref,
     () => ({
+      start: () => engineRef.current?.start(),
       pause: () => engineRef.current?.pause(),
       resume: () => engineRef.current?.resume(),
       end: () => engineRef.current?.end(),
       restart: () => engineRef.current?.restart(),
+      press: (code, down) => engineRef.current?.press(code, down),
     }),
     [],
   );

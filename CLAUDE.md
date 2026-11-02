@@ -26,7 +26,7 @@ Development is spec-driven. Write or update a spec before implementing a feature
 - Always use `/frontend-design` to design the user interface.
 - Save Playwright screenshots to `.playwright-screenshots/` (git-ignored).
 
-Specs so far: 01 visual MVP screens, 02 homepage, 03 about/contact, 04 Supabase setup, 05 Asteroids, 06 games table + leaderboards, 07 Tetris, 08 Arkanoid, 09 Arkanoid sound, 10 Snake.
+Specs so far: 01 visual MVP screens, 02 homepage, 03 about/contact, 04 Supabase setup, 05 Asteroids, 06 games table + leaderboards, 07 Tetris, 08 Arkanoid, 09 Arkanoid sound, 10 Snake, 11 touch controls.
 
 ## Commands
 
@@ -56,10 +56,11 @@ Claude Code hooks (`.claude/settings.json`): after every Write/Edit, `.claude/ho
 
 ## Game engines
 
-- Each real game is a framework-free canvas engine in `lib/engines/<id>.ts` implementing `GameEngine` from `lib/engines/types.ts` (`start` / `pause` / `resume` / `end` / `restart` / `destroy`, optional `setMuted`). It reports state through `onChange(EngineSnapshot)` (phase, score, level, lives or `null`, game-specific HUD `extras`) only when something changed, never every frame (use `sameExtras()`).
-- `lib/engines/index.ts` holds the `ENGINES` registry, keyed by game id: `factory`, a one-line `controls` legend and optional `sound: true`. A game with no entry falls back to the simulated player and cannot save scores.
+- Each real game is a framework-free canvas engine in `lib/engines/<id>.ts` implementing `GameEngine` from `lib/engines/types.ts` (`start` / `pause` / `resume` / `end` / `restart` / `destroy` / `press`, optional `setMuted`). It reports state through `onChange(EngineSnapshot)` (phase, score, level, lives or `null`, game-specific HUD `extras`) only when something changed, never every frame (use `sameExtras()`).
+- `lib/engines/index.ts` holds the `ENGINES` registry, keyed by game id: `factory`, a one-line keyboard `controls` legend, the touch `pad` layout and optional `sound: true`. A game with no entry falls back to the simulated player and cannot save scores.
 - `components/game-canvas.tsx` owns the engine lifecycle (one engine per mount, Strict Mode safe; callbacks and `muted` read through refs so they never recreate the engine). `components/game-player.tsx` renders the HUD, pause / game-over screens and the save-score form.
 - **Game sound.** An engine with sound sets `sound: true` on its `ENGINES` entry (the player then shows the SOUND ON / OFF button) and implements the optional `setMuted()`. It creates its `AudioContext` only inside a user gesture (`start` / `resume` / `restart`) and closes it in `destroy()`. The setting is shared by every game and stored in `localStorage["arcade-vault:sound"]` (`"on"` | `"off"`) through `useSoundSetting()` in `lib/sound-setting.ts`. Only Arkanoid has sound today.
+- **Touch controls.** Each engine routes its key listeners through `handleKeyDown(code, repeat)` / `handleKeyUp(code)`, and `press(code, down)` calls the same handlers, so keyboard and touch share one code path. `components/touch-pad.tsx` renders the entry's `pad` (`PadButton[]`: `slot` up/down/left/right/a/b, `code`, `label`, `ariaLabel`, optional `repeat` for 170 ms / 50 ms auto-repeat) under the CRT; buttons are held while the finger is down (multi-touch, released on cancel / blur / unmount) and vibrate where supported. The pad, `TAP TO START` and the compact CRT show only under `@media (pointer: coarse)`; tapping the ready overlay starts the run only on coarse pointers. Arkanoid's paddle also follows `pointermove` / `pointerdown` on the canvas.
 
 ## Supabase
 
