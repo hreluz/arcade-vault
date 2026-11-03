@@ -1,14 +1,18 @@
 import { createArkanoid } from "@/lib/engines/arkanoid";
 import { createAsteroids } from "@/lib/engines/asteroids";
+import { createFrogger } from "@/lib/engines/frogger";
 import { createSnake } from "@/lib/engines/snake";
 import { createTetris } from "@/lib/engines/tetris";
 import type { EngineFactory, PadButton } from "@/lib/engines/types";
+import { froggerSkins } from "@/lib/skins/frogger";
+import type { GameSkins } from "@/lib/skins/types";
 
 export type EngineEntry = {
   factory: EngineFactory;
   controls: string; // one-line keyboard legend (hidden on coarse pointers)
   pad: PadButton[]; // on-screen touch layout; required for every real engine
   sound?: true; // the player shows the SOUND button
+  skins?: GameSkins<string>; // the player shows the SKIN and MODE buttons
 };
 
 const LEFT: PadButton = { slot: "left", code: "ArrowLeft", ariaLabel: "Move left" };
@@ -30,6 +34,17 @@ export const ENGINES: Partial<Record<string, EngineEntry>> = {
       { slot: "a", code: "ArrowUp", caption: "THRUST", ariaLabel: "Thrust" },
       { slot: "b", code: "Space", caption: "FIRE", ariaLabel: "Fire" },
     ],
+  },
+  frogger: {
+    factory: createFrogger,
+    controls: "← ↑ → ↓ HOP · P PAUSE",
+    pad: [
+      { slot: "up", code: "ArrowUp", ariaLabel: "Hop up" },
+      { slot: "down", code: "ArrowDown", ariaLabel: "Hop down" },
+      { ...LEFT, ariaLabel: "Hop left" },
+      { ...RIGHT, ariaLabel: "Hop right" },
+    ],
+    skins: froggerSkins,
   },
   snake: {
     factory: createSnake,

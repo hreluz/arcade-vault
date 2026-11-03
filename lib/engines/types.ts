@@ -1,3 +1,5 @@
+import type { SkinPalette } from "@/lib/skins/types";
+
 export type EnginePhase = "ready" | "playing" | "paused" | "over";
 
 export type HudStat = { key: string; label: string; value: string }; // value already formatted, e.g. "4.2s"
@@ -36,6 +38,7 @@ export interface GameEngine {
   destroy(): void; // cancels rAF and removes every listener; idempotent
   press(code: PadCode, down: boolean): void; // on-screen input; same effect as the key going down / up
   setMuted?(muted: boolean): void; // only engines with sound implement it
+  setPalette?(palette: SkinPalette<string>): void; // only skinned engines; never restarts the run
 }
 
 export type EngineFactory = (canvas: HTMLCanvasElement, cb: EngineCallbacks) => GameEngine;

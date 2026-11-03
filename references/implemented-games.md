@@ -10,6 +10,7 @@ Games in the `games` table that have a real canvas engine (`lib/engines/<id>.ts`
 | 2     | `tetris`    | TETRIS    | PUZZLE   | magenta | `lib/engines/tetris.ts`     | No    | [07](../specs/07-tetris-game.md)                                                     | `started-games/03-tetris`     |
 | 3     | `snake`     | SNAKE     | ARCADE   | green   | `lib/engines/snake.ts`      | No    | [10](../specs/10-snake-game.md)                                                      | —                             |
 | 6     | `asteroids` | ASTEROIDS | SHOOTER  | yellow  | `lib/engines/asteroids.ts`  | No    | [05](../specs/05-asteroids-game.md)                                                  | `started-games/02-asteroids`  |
+| 7     | `frogger`   | FROGGER   | ARCADE   | green   | `lib/engines/frogger.ts`    | No    | [frogger](../specs/game-jam/frogger/01-frogger-core.md)                              | —                             |
 
 ## ARKANOID
 
@@ -52,6 +53,17 @@ Games in the `games` table that have a real canvas engine (`lib/engines/<id>.ts`
 - **Cover:** `cover-rocas`
 - **Notes:** first real engine; kept its original catalog row from `create_games`.
 
+## FROGGER
+
+- **Short:** Cross the road and river without getting squashed.
+- **Description:** Guide your frog across a road packed with cars and a river full of floating logs
+  and turtles. Fill the five goal slots on the other side to complete the round; each level speeds
+  up traffic and shortens the time limit. Three lives and plenty of asphalt ahead.
+- **Controls:** ← ↑ → ↓ HOP · P PAUSE
+- **Cover:** `cover-rana`
+- **Notes:** replaced the FROGGERIA placeholder (`replace_froggeria_with_frogger`). Drawn with canvas
+  primitives, no sprites.
+
 ## Still placeholders
 
 These rows exist in the `games` table but have no engine; the player runs a simulated score and
@@ -61,5 +73,4 @@ cannot save it.
 | ----- | ------------ | ---------- | -------- |
 | 4     | `glutton`    | GLUTTON    | ARCADE   |
 | 5     | `invaders`   | INVADERS   | SHOOTER  |
-| 7     | `froggeria`  | FROGGERIA  | ARCADE   |
 | 8     | `pixel-duel` | PIXEL DUEL | VERSUS   |

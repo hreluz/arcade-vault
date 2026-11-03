@@ -3,7 +3,13 @@ import type { GameColor } from "@/lib/games";
 export type FeatureIconKind = "GAMEPAD" | "FREE" | "TROPHY" | "ROCKET";
 
 export type Feature = { icon: FeatureIconKind; title: string; desc: string; color: GameColor };
-export type TickerRow = { player: string; gameId: string; score: number; ago: string; color: GameColor };
+export type TickerRow = {
+  player: string;
+  gameId: string;
+  score: number;
+  ago: string;
+  color: GameColor;
+};
 export type TopPlayer = { rank: number; player: string; score: number };
 export type FaqItem = { q: string; a: string };
 
@@ -41,7 +47,7 @@ export const TICKER: TickerRow[] = [
   { player: "VAULT_07", gameId: "asteroids", score: 41200, ago: "12 min ago", color: "cyan" },
   { player: "GLITCHA", gameId: "arkanoid", score: 28450, ago: "18 min ago", color: "cyan" },
   { player: "ARKADYA", gameId: "snake", score: 7820, ago: "24 min ago", color: "green" },
-  { player: "CYBER_LU", gameId: "froggeria", score: 18900, ago: "31 min ago", color: "yellow" },
+  { player: "CYBER_LU", gameId: "frogger", score: 18900, ago: "31 min ago", color: "yellow" },
 ];
 
 export const TOP_PLAYERS: TopPlayer[] = [

@@ -1,6 +1,6 @@
 ---
 name: skin-designer
-description: Designs the visual skins of Arcade Vault games, one game per run. The target is the game named in the prompt or, if none, the first unchecked item in the Queue of references/game-with-themes.md. Gives that game three skins — Classic (default), Neon and Retro — each with a light and a dark palette — and implements them directly in code (the shared skin contract and SKIN / MODE buttons on the first run, the engine colour refactor and the palette file), then records the result in references/game-with-themes.md. Runs unsupervised: never asks questions, never writes specs, never touches any other game.
+description: "Designs the visual skins of Arcade Vault games, one game per run. The target is the game named in the prompt or, if none, the first unchecked item in the Queue of references/game-with-themes.md. Gives that game three skins — Classic (default), Neon and Retro — each with a light and a dark palette — and implements them directly in code (the shared skin contract and SKIN / MODE buttons on the first run, the engine colour refactor and the palette file), then records the result in references/game-with-themes.md. Runs unsupervised: never asks questions, never writes specs, never touches any other game."
 tools: Read, Glob, Grep, Write, Edit, Bash(ls:*), Bash(date:*), Bash(git status:*), Bash(git log:*), Bash(source ~/.nvm/nvm.sh), Bash(nvm use), Bash(npx tsc --noEmit), Bash(npm run lint), Bash(npx eslint:*), Bash(npm run format:check), mcp__supabase__execute_sql
 model: inherit
 ---

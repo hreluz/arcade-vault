@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Arcade Vault is a platform for playing retro arcade games online and competing for the highest score. The catalog has 8 games; 4 have a real canvas engine (ARKANOID, TETRIS, SNAKE, ASTEROIDS) and the other 4 (GLUTTON, INVADERS, FROGGERIA, PIXEL DUEL) are placeholders that run a simulated score in the player.
+Arcade Vault is a platform for playing retro arcade games online and competing for the highest score. The catalog has 8 games; 5 have a real canvas engine (ARKANOID, TETRIS, SNAKE, ASTEROIDS, FROGGER) and the other 3 (GLUTTON, INVADERS, PIXEL DUEL) are placeholders that run a simulated score in the player.
 
 Routes (`app/`):
 
@@ -23,6 +23,7 @@ Development is spec-driven. Write or update a spec before implementing a feature
 
 - `/spec` writes a spec in `specs/NN-slug.md` (template in `.agents/skills/spec/template.md`); `/spec-impl` implements an approved spec and creates the `spec-NN-slug` branch automatically (`specs/.spec-config.yml`, `AutoCreateBranch: true`). Both come from [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`), installed in `.agents/skills/` and symlinked into `.claude/skills/`.
 - `/new-game <folder>` (project skill, `.claude/skills/new-game/`) turns a game from `references/started-games/` into a spec that ports it to a typed engine, adds its catalog row (replacing a placeholder) and wires it to the leaderboards. It only writes the spec; run `/spec-impl` after. `integration.md` there is the per-game integration checklist.
+- `/spec-impl-game <spec>` (project skill, `.claude/skills/spec-impl-game/`) follows the `/spec-impl` phases for a game spec, then runs the `skin-designer` agent and, once it finishes, the `mobile-porter` agent on that game, never in parallel. It does not commit.
 - `mobile-porter` (project subagent, `.claude/agents/mobile-porter.md`) reviews the layout on touch phones and desktop web against the SPEC 11 touch controls and fixes layout defects. It does not commit.
 - Always use `/frontend-design` to design the user interface.
 - Save Playwright screenshots to `.playwright-screenshots/` (git-ignored).
@@ -62,6 +63,7 @@ Claude Code hooks (`.claude/settings.json`): after every Write/Edit, `.claude/ho
 - `components/game-canvas.tsx` owns the engine lifecycle (one engine per mount, Strict Mode safe; callbacks and `muted` read through refs so they never recreate the engine). `components/game-player.tsx` renders the HUD, pause / game-over screens and the save-score form.
 - **Game sound.** An engine with sound sets `sound: true` on its `ENGINES` entry (the player then shows the SOUND ON / OFF button) and implements the optional `setMuted()`. It creates its `AudioContext` only inside a user gesture (`start` / `resume` / `restart`) and closes it in `destroy()`. The setting is shared by every game and stored in `localStorage["arcade-vault:sound"]` (`"on"` | `"off"`) through `useSoundSetting()` in `lib/sound-setting.ts`. Only Arkanoid has sound today.
 - **Touch controls.** Each engine routes its key listeners through `handleKeyDown(code, repeat)` / `handleKeyUp(code)`, and `press(code, down)` calls the same handlers, so keyboard and touch share one code path. `components/touch-pad.tsx` renders the entry's `pad` (`PadButton[]`: `slot` up/down/left/right/a/b, `code`, `ariaLabel`, optional `caption` for the A / B action, optional `repeat` for 170 ms / 50 ms auto-repeat) under the CRT as the Gamepad MK-II from `references/gamepad-assets/`. All six slots always render, and a slot missing from `pad` is dimmed and disabled. Buttons are held while the finger is down (multi-touch, released on cancel / blur / unmount) and vibrate where supported. The pad, `TAP TO START` and the compact CRT show only under `@media (pointer: coarse)`; tapping the ready overlay starts the run only on coarse pointers. Arkanoid's paddle also follows `pointermove` / `pointerdown` on the canvas.
+- **Game skins.** The contract lives in `lib/skins/types.ts`: Classic (default), Neon and Retro, each with a light and a dark palette, written per game in `lib/skins/<id>.ts`. A skinned game sets `skins:` on its `ENGINES` entry (the player then shows the SKIN and MODE buttons) and implements the optional `setPalette()`, which never restarts the run. A game without `skins` keeps its built-in colours. The settings are shared by every skinned game: `localStorage["arcade-vault:skin"]` (`useSkinSetting()`) and `localStorage["arcade-vault:color-mode"]` (`useColorMode()`), both in `lib/skins/setting.ts`. The `skin-designer` agent owns them; `references/game-with-themes.md` tracks the queue and the skinned games.
 
 ## Supabase
 
@@ -87,3 +89,4 @@ Migrations are applied with the MCP `apply_migration` tool and mirrored in `supa
 - `replace_falldown_with_tetris` — swaps the FALLDOWN placeholder for the real Tetris row (`tetris`, same `sort_order` 2).
 - `replace_block_buster_with_arkanoid` — swaps the BLOCK BUSTER placeholder for the real Arkanoid row (`arkanoid`, same `sort_order` 1).
 - `replace_serpentine_with_snake` — swaps the SERPENTINE placeholder for the real Snake row (`snake`, same `sort_order` 3).
+- `replace_froggeria_with_frogger` — swaps the FROGGERIA placeholder for the real Frogger row (`frogger`, same `sort_order` 7).
