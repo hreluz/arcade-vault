@@ -1,19 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useTransition, type CSSProperties, type MouseEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type CSSProperties,
+  type MouseEvent,
+} from "react";
 import { saveScore, type SaveScoreResult } from "@/app/games/[id]/play/actions";
 import GameCanvas, { type GameCanvasHandle } from "@/components/game-canvas";
 import TouchPad from "@/components/touch-pad";
 import { ENGINES } from "@/lib/engines";
 import type { EngineSnapshot } from "@/lib/engines/types";
 import type { Game } from "@/lib/games";
+import {
+  resolvePalette,
+  useColorMode,
+  useSkinSetting,
+  type ColorModeSetting,
+} from "@/lib/skins/setting";
+import { SKIN_IDS, type SkinId } from "@/lib/skins/types";
 import { useSoundSetting } from "@/lib/sound-setting";
 
 type Run = { score: number; level: number };
 const NEW_RUN: Run = { score: 0, level: 1 };
 
-type SaveState = { status: "idle" } | { status: "saved"; rank: number } | { status: "error"; message: string };
+type SaveState =
+  { status: "idle" } | { status: "saved"; rank: number } | { status: "error"; message: string };
 const IDLE: SaveState = { status: "idle" };
 
 const SAVE_ERRORS: Record<Extract<SaveScoreResult, { status: "error" }>["reason"], string> = {
@@ -23,8 +38,19 @@ const SAVE_ERRORS: Record<Extract<SaveScoreResult, { status: "error" }>["reason"
   failed: "COULDN'T SAVE YOUR SCORE. TRY AGAIN",
 };
 
+const MODE_SETTINGS: readonly ColorModeSetting[] = ["system", "light", "dark"];
+
+// The item after `current`, wrapping around: what SKIN and MODE cycle through.
+function nextOf<T>(items: readonly T[], current: T): T {
+  return items[(items.indexOf(current) + 1) % items.length];
+}
+
 // Same rule as the database CHECK: upper-case A-Z, 0-9 and _, at most 10 characters.
-const cleanName = (value: string) => value.toUpperCase().replace(/[^A-Z0-9_]/g, "").slice(0, 10);
+const cleanName = (value: string) =>
+  value
+    .toUpperCase()
+    .replace(/[^A-Z0-9_]/g, "")
+    .slice(0, 10);
 
 export default function GamePlayer({ game }: { game: Game }) {
   const entry = ENGINES[game.id];
@@ -39,6 +65,9 @@ export default function GamePlayer({ game }: { game: Game }) {
   const [save, setSave] = useState<SaveState>(IDLE);
   const [saving, startSaving] = useTransition();
   const [soundOn, setSoundOn] = useSoundSetting();
+  const [skin, setSkin] = useSkinSetting();
+  const [modeSetting, setModeSetting, mode] = useColorMode();
+  const palette = entry?.skins ? resolvePalette(entry.skins, skin, mode) : undefined;
 
   // Simulated play (games without a real engine): the score ticks up and the
   // level bumps every ~2,500 points.
@@ -88,6 +117,16 @@ export default function GamePlayer({ game }: { game: Game }) {
     releaseFocus(e);
   };
 
+  const cycleSkin = (e: MouseEvent<HTMLButtonElement>) => {
+    setSkin(nextOf<SkinId>(SKIN_IDS, skin));
+    releaseFocus(e);
+  };
+
+  const cycleMode = (e: MouseEvent<HTMLButtonElement>) => {
+    setModeSetting(nextOf(MODE_SETTINGS, modeSetting));
+    releaseFocus(e);
+  };
+
   const end = (e: MouseEvent<HTMLButtonElement>) => {
     if (factory) engineRef.current?.end();
     else setOver(true);
@@ -130,7 +169,8 @@ export default function GamePlayer({ game }: { game: Game }) {
     });
   };
 
-  const savedText = save.status === "saved" ? `▸ SCORE SAVED — RANK #${String(save.rank).padStart(2, "0")}_` : "";
+  const savedText =
+    save.status === "saved" ? `▸ SCORE SAVED — RANK #${String(save.rank).padStart(2, "0")}_` : "";
 
   return (
     <div className="av-player fade-in">
@@ -161,9 +201,24 @@ export default function GamePlayer({ game }: { game: Game }) {
             </div>
           ))}
         </div>
+        {entry?.skins && (
+          <div className="hud-actions">
+            <button type="button" className="btn ghost" onClick={cycleSkin}>
+              SKIN: {skin.toUpperCase()}
+            </button>
+            <button type="button" className="btn ghost" onClick={cycleMode}>
+              MODE: {modeSetting.toUpperCase()}
+            </button>
+          </div>
+        )}
         <div className="hud-actions">
           {entry?.sound && (
-            <button type="button" className="btn ghost" aria-pressed={soundOn} onClick={toggleSound}>
+            <button
+              type="button"
+              className="btn ghost"
+              aria-pressed={soundOn}
+              onClick={toggleSound}
+            >
               {soundOn ? "SOUND ON" : "SOUND OFF"}
             </button>
           )}
@@ -180,9 +235,19 @@ export default function GamePlayer({ game }: { game: Game }) {
       </div>
 
       <div className="crt">
-        <div className="crt-screen">
+        <div
+          className="crt-screen"
+          data-mode={palette ? mode : undefined}
+          style={palette ? ({ "--crt-bg": palette.colors.bg } as CSSProperties) : undefined}
+        >
           {entry ? (
-            <GameCanvas factory={entry.factory} onChange={setSnapshot} muted={!soundOn} ref={engineRef} />
+            <GameCanvas
+              factory={entry.factory}
+              onChange={setSnapshot}
+              muted={!soundOn}
+              palette={palette}
+              ref={engineRef}
+            />
           ) : (
             <div className="game-arena" aria-hidden="true">
               <div className="grid-floor" />
@@ -205,8 +270,8 @@ export default function GamePlayer({ game }: { game: Game }) {
             <div className="crt-content z-5 bg-black/60">
               <div>
                 <div className="pixel neon-yellow text-[22px]">PAUSED</div>
-                <div className="mono mt-2.5 text-[11px] tracking-[0.16em] text-ink-dim">
-                  {factory ? "PRESS P OR RESUME TO CONTINUE" : "PRESS RESUME TO CONTINUE"}
+                <div className="pause-hint mono mt-2.5 text-[11px] tracking-[0.16em]">
+                  PRESS {factory && <span className="pause-key">P OR </span>}RESUME TO CONTINUE
                 </div>
               </div>
             </div>
@@ -219,7 +284,12 @@ export default function GamePlayer({ game }: { game: Game }) {
         </div>
       </div>
 
-      {entry && <TouchPad buttons={entry.pad} onPress={(code, down) => engineRef.current?.press(code, down)} />}
+      {entry && (
+        <TouchPad
+          buttons={entry.pad}
+          onPress={(code, down) => engineRef.current?.press(code, down)}
+        />
+      )}
 
       {view.over && (
         <div className="modal-bd">
@@ -230,7 +300,11 @@ export default function GamePlayer({ game }: { game: Game }) {
             {!factory ? (
               <div className="save-demo">SCORES NOT RECORDED FOR THIS DEMO</div>
             ) : save.status === "saved" ? (
-              <div className="toast-saved" role="status" style={{ "--chars": savedText.length } as CSSProperties}>
+              <div
+                className="toast-saved"
+                role="status"
+                style={{ "--chars": savedText.length } as CSSProperties}
+              >
                 {savedText}
               </div>
             ) : (

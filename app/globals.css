@@ -1137,7 +1137,7 @@
   .crt-screen {
     position: relative;
     aspect-ratio: 4 / 3;
-    background: #000;
+    background: var(--crt-bg, #000); /* skinned games set --crt-bg to the palette's bg */
     border-radius: 12px / 28px;
     overflow: hidden;
     box-shadow:
@@ -1158,6 +1158,29 @@
     inset: 0;
     background: radial-gradient(120% 90% at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.65));
     pointer-events: none;
+  }
+  /* light palettes: the dark CRT shading would muddy a pale screen */
+  .crt-screen[data-mode="light"] {
+    box-shadow:
+      inset 0 0 24px rgba(0, 0, 0, 0.18),
+      inset 0 0 8px rgba(0, 0, 0, 0.08);
+  }
+  .crt-screen[data-mode="light"]::after {
+    background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.05) 0 2px, transparent 2px 4px);
+  }
+  .crt-screen[data-mode="light"]::before {
+    background: radial-gradient(120% 90% at 50% 50%, transparent 70%, rgba(0, 0, 0, 0.14));
+  }
+  /* light palettes: neon text needs a wider scrim and the brighter ink */
+  .crt-screen[data-mode="light"] .ready-overlay {
+    background: radial-gradient(90% 45% at 50% 50%, rgba(0, 0, 0, 0.75), transparent);
+  }
+  .pause-hint {
+    color: var(--ink-dim);
+  }
+  .crt-screen[data-mode="light"] .pause-hint,
+  .crt-screen[data-mode="light"] .ready-controls {
+    color: var(--ink);
   }
   .crt-content {
     position: absolute;
@@ -1570,6 +1593,26 @@
       letter-spacing: 0.08em;
       white-space: nowrap;
     }
+    /* the keyboard shortcut means nothing here; RESUME is on screen */
+    .pause-key {
+      display: none;
+    }
+    /* touch targets: at least 44 px outside the pad */
+    .btn,
+    .av-nav .logo {
+      min-height: 44px;
+    }
+    /* a sticky nav would cover the top of the CRT while playing */
+    body:has(.av-player) .av-nav {
+      position: static;
+    }
+  }
+
+  /* skinned HUD up to tablets: fixed rows, so changing SKIN never moves the CRT */
+  @media (max-width: 900px) {
+    .player-hud:has(.hud-actions + .hud-actions) .hud-actions {
+      width: 100%;
+    }
   }
 
   /* player HUD on phones: tight stats, one row of equal action buttons */
@@ -1604,6 +1647,14 @@
 
   /* narrow phones: same tap sizes, A / B end up almost stacked */
   @media (max-width: 359px) {
+    /* Sign In stays in the menu panel; the header can't hold all three items */
+    .av-nav .auth-btn {
+      display: none;
+    }
+    .crt-bottom {
+      padding: 0;
+      letter-spacing: 0.02em;
+    }
     .touch-pad {
       column-gap: 2px;
       padding-inline: 6px;
@@ -1635,8 +1686,10 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
+    overflow-y: auto; /* a short viewport (on-screen keyboard) must not cut the modal off */
   }
   .modal {
+    margin: auto;
     width: min(480px, 96vw);
     background: var(--bg-2);
     border: 1px solid var(--magenta);
@@ -1683,6 +1736,7 @@
   }
   .modal .input-row input {
     flex: 1;
+    min-width: 0;
     height: 44px;
     padding: 0 12px;
     background: var(--bg);
@@ -1723,6 +1777,21 @@
     justify-content: center;
     margin-top: 18px;
     flex-wrap: wrap;
+  }
+  @media (pointer: coarse) {
+    /* under 16 px, iOS zooms the page on focus */
+    .modal .input-row input {
+      font-size: 16px;
+    }
+  }
+  @media (max-width: 640px) {
+    .modal {
+      padding: 24px 20px;
+    }
+    /* room for all 10 initials; SAVE SCORE wraps instead */
+    .modal .input-row input {
+      min-width: 124px;
+    }
   }
   .toast-saved {
     font-family: var(--pixel);
